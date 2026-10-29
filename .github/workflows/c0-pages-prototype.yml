@@ -1,0 +1,74 @@
+name: C0-G publish zero-media WebGL prototype to GitHub Pages
+
+on:
+  push:
+    branches: [c0-audit-claudecraft-v0447]
+    paths:
+      - "web/**"
+      - "scripts/c0_build_web.mjs"
+      - "scripts/c0_release_gate.mjs"
+      - "config/c0_approved_assets.json"
+      - ".github/workflows/c0-pages-prototype.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: highfly-origin-c0-g-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validate and package C0-G
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout HIGHFLY only
+        uses: actions/checkout@v4
+        with:
+          path: highfly
+          persist-credentials: false
+      - name: Checkout upstream only as temporary source code, pinned
+        uses: actions/checkout@v4
+        with:
+          repository: levy-street/world-of-claudecraft
+          ref: 493c35a108cef6c8aa290e8793107b1cd117886e
+          path: upstream
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            src
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install compile tools only
+        run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0
+      - name: Build original world with original CODE and custom zero-asset renderer
+        run: node highfly/scripts/c0_build_web.mjs
+      - name: Hard license and no-prohibited-media gate
+        run: node highfly/scripts/c0_release_gate.mjs highfly/dist highfly/config/c0_approved_assets.json
+      - name: Prepare GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload approved HTML/JS/NOTICE only for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: highfly/dist
+  deploy:
+    name: Deploy approved C0-G to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        name: Publish via official Pages deployment action
+        uses: actions/deploy-pages@v4
