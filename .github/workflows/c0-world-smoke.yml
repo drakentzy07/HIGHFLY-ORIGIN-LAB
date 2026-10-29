@@ -1,0 +1,49 @@
+name: C0-C original world data and terrain smoke
+
+on:
+  push:
+    branches: [c0-audit-claudecraft-v0447]
+    paths:
+      - "scripts/c0_world_smoke.ts"
+      - ".github/workflows/c0-world-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  world-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout HIGHFLY test harness
+        uses: actions/checkout@v4
+        with:
+          path: highfly
+          persist-credentials: false
+      - name: Checkout upstream official original code read-only
+        uses: actions/checkout@v4
+        with:
+          repository: levy-street/world-of-claudecraft
+          ref: 493c35a108cef6c8aa290e8793107b1cd117886e
+          path: upstream
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            src/sim
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Execute exact source world data, terrain and invariant checks
+        run: npx --yes --package=tsx@4.22.4 tsx highfly/scripts/c0_world_smoke.ts
+      - name: Upload numeric world baseline only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: highfly-c0-world-baseline
+          path: highfly/reports/c0/world/
+          if-no-files-found: warn
+          retention-days: 14
