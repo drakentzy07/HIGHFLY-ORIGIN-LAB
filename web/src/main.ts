@@ -40,7 +40,7 @@ let prevCameraX=0,prevCameraY=0;
 let lastFrame=performance.now(), elapsed=0, simCarry=0, hudCarry=0;
 let sim:any, player:any, playerId=0;
 let target:any=null;
-let announcementUntil=0,inventoryOpen=false;
+let announcementUntil=0,inventoryOpen=false,swimming=false;
 const useButton=document.getElementById('use') as HTMLButtonElement;
 const bagButton=document.getElementById('bag') as HTMLButtonElement;
 const panel=document.getElementById('inventory') as HTMLDivElement;
@@ -342,7 +342,7 @@ function clock(t:number){
   }
   const y=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
   const currentWater=waterLevelAt(player.pos.x,player.pos.z,WORLD_SEED);
-  const swimming=Number.isFinite(currentWater)&&Number.isFinite(y)&&y<currentWater-.65;
+  swimming=Number.isFinite(currentWater)&&Number.isFinite(y)&&y<currentWater-.65;
   // Surface float is based on water level, not seabed. Decks still use the
   // genuine groundHeight so players can walk normally across existing piers.
   const visualY=swimming?currentWater-.70+Math.sin(elapsed*3.6)*.055:(Number.isFinite(y)?y+jumpOffset:player.pos.y+jumpOffset);
