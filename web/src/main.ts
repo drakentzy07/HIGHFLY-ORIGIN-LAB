@@ -3,6 +3,7 @@
 // NO asset files, GLBs, icons, screenshots or sounds are included.
 // Controls/dash/jump are provisional visualization controls, NOT final Fury 360.
 import * as THREE from 'three';
+import { cameraBasis, controlWorldVector, yawAfterDrag } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
 import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/data.ts';
 import { terrainHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
@@ -245,7 +246,7 @@ canvas.addEventListener('pointerdown',e=>{
 });
 canvas.addEventListener('pointermove',e=>{
   if(cameraPointer!==e.pointerId)return;
-  yaw+=(e.clientX-prevCameraX)*.006;
+  yaw=yawAfterDrag(yaw,e.clientX-prevCameraX);
   pitch=Math.max(.08,Math.min(.9,pitch+(e.clientY-prevCameraY)*.004));
   prevCameraX=e.clientX;prevCameraY=e.clientY;
 });
@@ -286,9 +287,10 @@ function clock(t:number){
   if(mag>.1){
     ix/=Math.max(1,mag);iy/=Math.max(1,mag);
     const speed=(dashLeft>0?18:7.2)*dt;
-    player.pos.x+=(ix*Math.cos(yaw)+iy*Math.sin(yaw))*speed;
-    player.pos.z+=(-ix*Math.sin(yaw)+iy*Math.cos(yaw))*speed;
-    player.facing=Math.atan2(ix*Math.cos(yaw)+iy*Math.sin(yaw),-ix*Math.sin(yaw)+iy*Math.cos(yaw));
+    const direction=controlWorldVector(ix,iy,yaw);
+    player.pos.x+=direction.x*speed;
+    player.pos.z+=direction.z*speed;
+    player.facing=Math.atan2(direction.x,direction.z);
     player.vx=0;player.vz=0;
   }
   dashLeft=Math.max(0,dashLeft-dt);
@@ -349,6 +351,11 @@ async function initialize(){
     renderTemporaryVegetation(centerX,centerZ);
     updateEntities();
     status.textContent='Eastbrook region · '+buildings+' original building coordinates';
+    // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
+    Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
+      yaw,position:{x:player.pos.x,z:player.pos.z},right:cameraBasis(yaw).right,
+      forward:cameraBasis(yaw).forward
+    }),configurable:false});
     loader.style.display='none';
     lastFrame=performance.now();
     requestAnimationFrame(clock);
