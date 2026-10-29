@@ -26,7 +26,7 @@ if(!credits.includes('Animated creatures (wolf,')||!credits.includes('Quaternius
 
 const files=[];
 for(const item of allow.assets){
-  if(item.license!=='CC0-1.0')throw Error('Non-CC0 asset attempted: '+item.path);
+  if(!['CC0-1.0','Apache-2.0'].includes(item.license))throw Error('Non-approved license attempted: '+item.path);
   const data=await readFile(source(item.path));
   const sha256=createHash('sha256').update(data).digest('hex');
   if(item.gitBlobSha){
