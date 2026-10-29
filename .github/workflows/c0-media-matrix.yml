@@ -5,8 +5,10 @@ on:
     branches: [c0-audit-claudecraft-v0447]
     paths:
       - "scripts/c0_media_matrix.mjs"
+      - "scripts/c0_runtime_media_matrix.mjs"
       - "scripts/c0_inventory.mjs"
       - "tests/c0_media_matrix.test.mjs"
+      - "tests/c0_runtime_media_matrix.test.mjs"
       - ".github/workflows/c0-media-matrix.yml"
   workflow_dispatch:
 
@@ -25,11 +27,13 @@ jobs:
         with:
           node-version: "22"
       - name: Run fail-closed license logic tests
-        run: node --test tests/c0_media_matrix.test.mjs
+        run: node --test tests/c0_media_matrix.test.mjs tests/c0_runtime_media_matrix.test.mjs
       - name: Inspect original Git tree and pinned credits (metadata only)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/c0_media_matrix.mjs
+      - name: Cross-check actual renderer media manifest
+        run: node scripts/c0_runtime_media_matrix.mjs
       - name: Upload path matrix only, never original assets
         if: always()
         uses: actions/upload-artifact@v4
