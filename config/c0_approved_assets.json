@@ -48,7 +48,103 @@
       "provider": "Quaternius — wolf credited in World of ClaudeCraft v0.44.7 CREDITS",
       "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/creatures/wolf.glb",
       "licenseEvidence": "https://quaternius.com/packs/ultimateanimatedanimals.html"
+    },
+    {
+      "path": "assets/kaykit/building_blacksmith_blue.gltf",
+      "sha256": "b9b76474cde5a379334b31cf8ef108c26e8051b6f7560402cd7c2a100fb4bf54",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_blacksmith_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_blacksmith_blue.bin",
+      "sha256": "2b5f91972249f3b4acee5d293b0291769213f3bd6272bd3fdacbd2b113b82853",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_blacksmith_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_church_blue.gltf",
+      "sha256": "ac2d9dfbdcffd1604e1522ddb26fe27c1feae2bc01bf90664c8044b22926867b",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_church_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_church_blue.bin",
+      "sha256": "f1609a2910972dd82f948b7265e65646a93cbe303d5deb7c69d5b3d6f4f50dda",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_church_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_market_blue.gltf",
+      "sha256": "24874a4651dfff0d1aea31e15a32b9c35122958764c6f968ca55f286285ffbe9",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_market_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_market_blue.bin",
+      "sha256": "35713e17b24a26274ba38def66f17fe838987e4e8f803cf680140b3754676442",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_market_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_home_B_blue.gltf",
+      "sha256": "bf503f4edcd3a744a021ccdd5b9215f6c8934ef87fa44d95632cb653422797eb",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_home_B_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_home_B_blue.bin",
+      "sha256": "a9736eef43b33d8963f1f54b709eb4395cd5069aa6317b09856687d4045059ca",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_home_B_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_well_blue.gltf",
+      "sha256": "66305823322b2e6a7f1cb8d8bf0d91ed9b94b8d96f61d0f7af77bd0d09f6463e",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_well_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_well_blue.bin",
+      "sha256": "5c50811c6666df2a9b43afc1a83ccccf19678c0f8e40c3ca0bf341722dc5133f",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_well_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_barracks_blue.gltf",
+      "sha256": "a4f3aaa7ebb33cf0d86a139941b350e580e3e1376e3ead99a5aaecb5de2f3817",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_barracks_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_barracks_blue.bin",
+      "sha256": "e3613795eeb9a6366920771b7b1c2b67b2b1df8c39b3ac82edc22d816c18499e",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_barracks_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
     }
   ],
-  "comment": "Exact file hashes recorded from pinned official KayKit CC0 repo and Quaternius wolf credited by ClaudeCraft v0.44.7. Only these six files are authorized. Player-source assets excluded."
+  "comment": "C0-K1: 18 exact official pinned CC0 media files (existing 6 + 12 town variants); SHA-256 verified. No SOURCE archive or unapproved media."
 }

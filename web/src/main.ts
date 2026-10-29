@@ -12,6 +12,8 @@ import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/da
 import { terrainHeight, groundHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
 import { resolveMovement } from '../../../upstream/src/sim/colliders.ts';
 import { WorldStreamer } from './world_stream.ts';
+import { createHighflyFigure } from './highfly_actor.ts';
+import { EASTBROOK_LAYOUT } from '../../../upstream/src/sim/eastbrook_layout.ts';
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
@@ -65,30 +67,26 @@ const otherMobMat=material(0xa15d83);
 const buildingMat=material(0x9eaa9a);
 const roofMat=material(0x70485a);
 const markerMat=material(0x37e5a8);
-const playerMesh = new THREE.Group();
-const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.7,1.25,4,8),pcMat);
-torso.position.y=1.65;playerMesh.add(torso);
-const head = new THREE.Mesh(new THREE.SphereGeometry(.5,10,7),material(0xd8aeb2));
-head.position.y=2.85;playerMesh.add(head);
-const pointer=new THREE.Mesh(new THREE.ConeGeometry(.30,.75,5),material(0xd9fbff));
-pointer.rotation.x=Math.PI/2;pointer.position.set(0,2.0,0.68);playerMesh.add(pointer);
+const playerMesh=createHighflyFigure('hunter');
 scene.add(playerMesh);
 
 const height=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
 const approvedUrl=(path:string)=>new URL('./'+path,document.baseURI).href;
 async function loadApprovedModels(){
-  // Exact six files are SHA-256 verified against pinned sources in CI.
-  // This is one house, one tavern, and one animated wolf. No player model.
-  const [house,tavern,wolf]=await Promise.all([
-    approvedLoader.loadAsync(approvedUrl('assets/kaykit/building_home_A_blue.gltf')),
-    approvedLoader.loadAsync(approvedUrl('assets/kaykit/building_tavern_blue.gltf')),
-    approvedLoader.loadAsync(approvedUrl('assets/quaternius/wolf.glb'))
-  ]);
-  buildingVisuals.set('house',house.scene);
-  buildingVisuals.set('tavern',tavern.scene);
-  wolfVisual=wolf.scene;
-  wolfClips=wolf.animations;
-  if(!wolfVisual)throw Error('The vetted wolf asset was not loaded');
+  // Every model below is pinned to the original KayKit CC0 repo and SHA-gated.
+  const candidates:Record<string,string>={
+    house:'building_home_A_blue',homeB:'building_home_B_blue',tavern:'building_tavern_blue',
+    church:'building_church_blue',blacksmith:'building_blacksmith_blue',
+    market:'building_market_blue',barracks:'building_barracks_blue',well:'building_well_blue'
+  };
+  const results=await Promise.all(Object.entries(candidates).map(async ([key,file])=>{
+    const gltf=await approvedLoader.loadAsync(approvedUrl('assets/kaykit/'+file+'.gltf'));
+    return [key,gltf.scene] as const;
+  }));
+  for(const [key,model] of results)buildingVisuals.set(key,model);
+  const wolf=await approvedLoader.loadAsync(approvedUrl('assets/quaternius/wolf.glb'));
+  wolfVisual=wolf.scene;wolfClips=wolf.animations;
+  if(!wolfVisual||!wolfClips.length)throw Error('Quaternius wolf or animations not available');
 }
 
 function posOf(item:any):{x:number,z:number}|null{
@@ -226,8 +224,8 @@ function makeEntity(e:any){
   const group=new THREE.Group();
   let model:THREE.Object3D;
   if(e.kind==='npc'){
-    model=new THREE.Mesh(new THREE.CapsuleGeometry(.49,1.2,3,6),npcMat);
-    model.position.y=1.45;
+    model=createHighflyFigure('npc');
+    model.scale.setScalar(.9);
   }else{
     const wolf=/wolf|hound/i.test((e.templateId||'')+' '+(e.name||''));
     if(wolf&&wolfVisual&&realWolvesShown<12){
@@ -251,11 +249,8 @@ function makeEntity(e:any){
     }
   }
   group.add(model);
-  if(e.kind==='npc'){
-    const head=new THREE.Mesh(new THREE.SphereGeometry(.39,7,6),material(0xe4bb9d));
-    head.position.y=2.47;group.add(head);
-  }
-  group.userData.entityId=e.id;scene.add(group);return group;
+
+  group.userData.entityId=e.id;group.userData.kind=e.kind;scene.add(group);return group;
 }
 function updateEntities(){
   const max=115,seen=new Set<number>();
@@ -269,6 +264,7 @@ function updateEntities(){
     if(!group){group=makeEntity(e);entityMeshes.set(e.id,group);}
     group.position.set(e.pos.x,e.pos.y,e.pos.z);
     group.rotation.y=e.facing||0;
+    if(e.kind==='npc')group.children[0]?.userData.animate?.(elapsed,false,false);
   }
   for(const [id,group] of entityMeshes)
     if(!seen.has(id)){
@@ -344,6 +340,7 @@ function clock(t:number){
   if(!player)return;
   elapsed+=dt;simCarry+=dt;hudCarry+=dt;
   for(const mixer of wolfMixers.values())mixer.update(dt);
+  playerMesh.userData.animate?.(elapsed,Math.hypot(MOVE.x,MOVE.y)>.1,!!target);
   // Preview movement applies to the original Sim entity and heightfield. Not the
   // original final movement/physics API, which remains to be integrated.
   let ix=MOVE.x,iy=-MOVE.y;
@@ -378,7 +375,7 @@ function clock(t:number){
   playerMesh.position.set(player.pos.x,Number.isFinite(y)?y+jumpOffset:player.pos.y+jumpOffset,player.pos.z);
   playerMesh.rotation.y=player.facing||0;
   const focus=new THREE.Vector3(player.pos.x,playerMesh.position.y+1.6,player.pos.z);
-  const distance=15;
+  const distance=12;
   const position=orbitCameraPosition(focus,yaw,pitch,distance);
   const desired=new THREE.Vector3(position.x,position.y,position.z);
   // Keep the following camera slightly above the terrain, including on slopes.
@@ -392,7 +389,8 @@ function clock(t:number){
     updateEntities();
     const zone=ZONES.find((z:any)=>player.pos.z>=z.zMin&&player.pos.z<=z.zMax);
     const hp=Math.max(0,Math.min(100,Math.round(100*(player.hp??0)/Math.max(1,player.maxHp??1))));
-    stats.textContent='Level '+(player.level||1)+' · '+Math.round(player.pos.x)+', '+Math.round(player.pos.z)+'\n'+entityMeshes.size+' nearby entities · '+Math.floor(elapsed)+'s';
+    const npcCount=[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length;
+    stats.textContent='Nivel '+(player.level||1)+' · '+Math.round(player.pos.x)+', '+Math.round(player.pos.z)+'\n'+npcCount+' NPC · '+realWolvesShown+' lobos · '+entityMeshes.size+' entidades';
     stats.style.whiteSpace='pre-line';
     hpbar.style.width=hp+'%';
     if(!target)status.textContent='Zone: '+(zone?.name||'Outside zone')+' · Real Sim tick running';
@@ -422,7 +420,7 @@ async function initialize(){
     realBuildingsShown=worldStreamer.approvedVisible;
     const buildings=realBuildingsShown;
     updateEntities();
-    status.textContent='Mundo C0-J · 15 regiones · '+buildings+' edificios KayKit visibles';
+    status.textContent='Eastbrook K1 · '+buildings+' construcciones CC0 visibles';
     const zonesSelect=document.getElementById('zoneJump') as HTMLSelectElement|null;
     if(zonesSelect){for(let i=0;i<ZONES.length;i++){const opt=document.createElement('option');opt.value=String(i);opt.textContent=(i+1)+'. '+ZONES[i].name;zonesSelect.appendChild(opt);}
       zonesSelect.addEventListener('change',()=>{const zone=ZONES[Number(zonesSelect.value)];if(!zone)return;
@@ -432,10 +430,28 @@ async function initialize(){
         worldStreamer?.update(p.x,p.z,true);status.textContent='Exploración: '+zone.name;
       });}
 
+    const poiSelect=document.getElementById('poiJump') as HTMLSelectElement|null;
+    if(poiSelect){
+      const landmarks=[
+        ['spawn','Inicio original',PLAYER_START],
+        ['plaza','Plaza Eastbrook',EASTBROOK_LAYOUT.civic.center],
+        ['smithy','Herrería Eastbrook',EASTBROOK_LAYOUT.buildings.find((b:any)=>b.id==='eastbrook_smithy')?.position],
+        ['inn','Taberna Eastbrook',EASTBROOK_LAYOUT.buildings.find((b:any)=>b.id==='eastbrook_inn')?.position],
+        ['port','Muelles originales',{x:-94,z:-54}],
+        ...ZONES[0].pois.filter((p:any)=>['wolf_run','bandit_camp','mirror_lake'].includes(p.id)).map((p:any)=>[p.id,p.label,p])
+      ] as any[];
+      for(const [key,label] of landmarks){const opt=document.createElement('option');opt.value=String(key);opt.textContent=String(label);poiSelect.appendChild(opt);}
+      poiSelect.addEventListener('change',()=>{
+        const found=landmarks.find(x=>x[0]===poiSelect.value);const p=found&&posOf(found[2]);if(!p)return;
+        player.pos.x=p.x;player.pos.z=p.z;player.pos.y=groundHeight(p.x,p.z,WORLD_SEED);
+        jumpOffset=0;jumpSpeed=0;dashLeft=0;target=null;worldStreamer?.update(p.x,p.z,true);
+        updateEntities();status.textContent='Destino: '+found[1];
+      });
+    }
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
-      yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
-      forward:cameraBasis(yaw).forward
+      yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),church:buildingVisuals.has('church'),blacksmith:buildingVisuals.has('blacksmith'),market:buildingVisuals.has('market'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
+      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
     }),configurable:false});
     loader.style.display='none';
     lastFrame=performance.now();

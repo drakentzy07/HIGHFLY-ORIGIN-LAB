@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="theme-color" content="#070d15" />
-  <title>HIGHFLY ORIGIN — C0-J Mundo Completo</title>
+  <title>HIGHFLY ORIGIN — K1 Eastbrook Restoration</title>
   <style>
   *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070e19;font-family:system-ui,-apple-system,sans-serif;color:#f4f8ff;touch-action:none;overscroll-behavior:none}
   #stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
@@ -21,7 +21,7 @@
   #actions{position:absolute;bottom:max(25px,env(safe-area-inset-bottom));right:max(18px,env(safe-area-inset-right));pointer-events:auto;display:flex;align-items:center;gap:10px}
   .btn{border-radius:50%;border:2px solid #3d83a1;background:#071a31dd;color:white;font-size:12px;font-weight:800;box-shadow:0 0 18px #071625;touch-action:none}
   #atk{width:80px;height:80px;border-color:#52d6fd;background:radial-gradient(#164a68,#071a35)}#jump{width:61px;height:61px}#dash{width:61px;height:61px}
-  #worldTravel{pointer-events:auto;position:absolute;top:110px;right:14px;max-width:190px;background:#071827d9;border:1px solid #2d7089;border-radius:10px;padding:7px;color:#b2ebff;font-size:10px}#zoneJump{display:block;width:100%;margin-top:5px;background:#0b2540;color:#effaff;border:1px solid #4d7e9c;border-radius:6px;padding:5px;font-size:11px}#zoneJump option{color:white;background:#0b2540}@media(max-height:430px){#worldTravel{top:70px;right:8px;max-width:138px;padding:4px;font-size:9px}#zoneJump{font-size:9px;padding:3px}}
+  #worldTravel{pointer-events:auto;position:absolute;top:110px;right:14px;max-width:190px;background:#071827d9;border:1px solid #2d7089;border-radius:10px;padding:7px;color:#b2ebff;font-size:10px}#zoneJump,#poiJump{display:block;width:100%;margin-top:5px;background:#0b2540;color:#effaff;border:1px solid #4d7e9c;border-radius:6px;padding:5px;font-size:11px}#zoneJump option,#poiJump option{color:white;background:#0b2540}@media(max-height:430px){#worldTravel{top:70px;right:8px;max-width:138px;padding:4px;font-size:9px}#zoneJump{font-size:9px;padding:3px}}
   .foot{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);color:#a4cbd4;font-size:9px;white-space:nowrap;text-align:center}
   #loading{position:absolute;inset:0;background:linear-gradient(150deg,#050b19,#143449);display:flex;align-items:center;justify-content:center;text-align:center;z-index:5;padding:20px}
   #loading div{max-width:460px}#loading h1{letter-spacing:.12em;color:#72e7f9;font-size:clamp(22px,4vw,40px);margin:0 0 12px}#loading p{color:#b9dfec;font-size:13px;line-height:1.65}
@@ -31,15 +31,15 @@
 <body>
   <canvas id="stage"></canvas>
   <div class="hud">
-    <div class="top"><div><div class="brand">HIGHFLY <span style="color:#fff">ORIGIN</span></div><div class="mini">C0-J · MUNDO ORIGINAL EN SECTORES</div><div class="bar"><i id="hpbar"></i></div></div><div id="stats">Waiting for world…</div></div>
+    <div class="top"><div><div class="brand">HIGHFLY <span style="color:#fff">ORIGIN</span></div><div class="mini">K1 · EASTBROOK RESTAURACIÓN VISUAL</div><div class="bar"><i id="hpbar"></i></div></div><div id="stats">Waiting for world…</div></div>
     <div id="status">World: initializing…</div>
-    <div id="worldTravel">EXPLORAR REGIONES<select id="zoneJump"><option value="">Elegí una zona…</option></select></div>
-    <div id="hint">Left stick: move · Right side: look · Desktop: WASD + drag</div>
+    <div id="worldTravel">VIAJE DE PRUEBA<select id="poiJump"><option value="">Plaza, puerto, lobos…</option></select><select id="zoneJump"><option value="">Otras regiones…</option></select></div>
+    <div id="hint">Joystick: mover · Derecha: cámara · Saltar / Dash / ATK</div>
     <div id="stick"><div id="nub"></div></div>
-    <div id="actions"><button id="jump" class="btn">JUMP</button><button id="dash" class="btn">DASH</button><button id="atk" class="btn">ATK</button></div>
+    <div id="actions"><button id="jump" class="btn">SALTO</button><button id="dash" class="btn">DASH</button><button id="atk" class="btn">ATK</button></div>
     <div class="foot">MOTOR MIT · PUERTO ORIGINAL · MODELOS CC0 VERIFICADOS</div>
   </div>
-  <div id="loading"><div><h1>HIGHFLY ORIGIN</h1><p id="loadText">Loading original ClaudeCraft v0.44.7 world simulation…</p><p>Mundo original en sectores; algunas representaciones siguen siendo temporales.</p></div></div>
+  <div id="loading"><div><h1>HIGHFLY ORIGIN</h1><p id="loadText">Cargando Eastbrook original y los recursos CC0 aprobados…</p><p>Eastbrook K1: edificios diferenciados y personajes temporales propios. No es aún el mundo final.</p></div></div>
   <script type="module" src="./game.js"></script>
 </body>
 </html>

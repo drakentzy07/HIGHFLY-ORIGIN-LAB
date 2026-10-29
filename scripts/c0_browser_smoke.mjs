@@ -60,6 +60,11 @@ try {
 
   if(initial.streaming?.regions!==15||!(initial.streaming?.chunks>=9))
     throw Error('C0-J world did not stream the original 15-zone map: '+JSON.stringify(initial.streaming));
+  if(!initial.actorVisible||initial.landmarkCount<7)
+    throw Error('K1 original Hunter visual or navigation markers missing: '+JSON.stringify(initial));
+  if(!initial.approvedModelsLoaded?.church||!initial.approvedModelsLoaded?.blacksmith||
+     !initial.approvedModelsLoaded?.market)
+    throw Error('K1 town building types failed to load');
   await page.mouse.move(750,190);
   await page.mouse.down();
   await page.mouse.move(830,215,{steps:4});

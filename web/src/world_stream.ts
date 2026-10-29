@@ -6,6 +6,8 @@ import { BUILTIN_WORLD, ZONES } from '../../../upstream/src/sim/data.ts';
 import { terrainHeight, roadDistance, waterLevelAt, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 import { buildEastbrookHarbor } from '../../../upstream/src/render/eastbrook_harbor.ts';
+import { EASTBROOK_LAYOUT } from '../../../upstream/src/sim/eastbrook_layout.ts';
+import { generateDecorationsInBounds } from '../../../upstream/src/sim/world.ts';
 
 const SIZE=64, RADIUS=2, SAMPLES=16;
 const landMat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
@@ -16,7 +18,9 @@ const woodMat=new THREE.MeshLambertMaterial({color:0x775337});
 const stoneMat=new THREE.MeshLambertMaterial({color:0x9e9c8d});
 const roofMat=new THREE.MeshLambertMaterial({color:0x635b70});
 const stallMat=new THREE.MeshLambertMaterial({color:0xc8a261,side:THREE.DoubleSide});
-const treeGeo=new THREE.ConeGeometry(1.6,4.2,6);
+const treeGeo=new THREE.IcosahedronGeometry(1.65,1);
+const rockGeo=new THREE.DodecahedronGeometry(.9,0);
+const rockMat=new THREE.MeshLambertMaterial({color:0x89918b});
 const trunkGeo=new THREE.CylinderGeometry(.22,.36,2,6);
 const tempBox=new THREE.Box3(),tempSize=new THREE.Vector3();
 const pos=(b:any)=>{const p=b?.pos||b?.position||b?.center||b;return p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.z))?{x:Number(p.x),z:Number(p.z)}:null;};
@@ -71,7 +75,9 @@ function buildings(ix:number,iz:number,group:THREE.Group,templates:Map<string,TH
   for(const b of (BUILTIN_WORLD.props?.buildings||[]) as any[]){const p=pos(b);if(!p||!inChunk(p.x,p.z,ix,iz))continue;
     const w=Math.max(3,Math.min(30,Number(b.w??b.width??8))),d=Math.max(3,Math.min(30,Number(b.d??b.depth??9))),h=Math.max(3,Math.min(22,Number(b.height??b.h??6)));
     const rot=Number(b.rot??b.rotation??0),y=elev(p.x,p.z),tag=String(b.assetId||'')+' '+String(b.kind||'');
-    const template=/tavern|inn/i.test(tag)?templates.get('tavern'):templates.get('house');
+    const id=String(b.id||'');
+    const selected=/smithy/i.test(id)?'blacksmith':/chapel/i.test(id)?'church':/inn/i.test(id)?'tavern':/harbour_market/i.test(id)?'market':/bank/i.test(id)?'barracks':/toolworks|quayside|home_east/i.test(id)?'homeB':/workshop/i.test(id)?'blacksmith':/home/i.test(id)?'house':(/tavern|inn/i.test(tag)?'tavern':'house');
+    const template=templates.get(selected)||templates.get('house');
     if(template){const mesh=template.clone(true);tempBox.setFromObject(mesh);tempBox.getSize(tempSize);
       const scale=Math.min(w/Math.max(.01,tempSize.x),d/Math.max(.01,tempSize.z));
       mesh.scale.setScalar(Math.max(.01,scale));mesh.position.set(p.x,y-tempBox.min.y*scale,p.z);mesh.rotation.y=rot;
@@ -85,19 +91,67 @@ function buildings(ix:number,iz:number,group:THREE.Group,templates:Map<string,TH
   for(const s of (BUILTIN_WORLD.props?.stalls||[]) as any[]){const p=pos(s);if(!p||!inChunk(p.x,p.z,ix,iz))continue;const y=elev(p.x,p.z);box(group,3,1.05,2,woodMat,p.x,y,p.z);box(group,3.9,.22,2.8,stallMat,p.x,y+2.9,p.z);}
   return approved;
 }
-function trees(ix:number,iz:number,group:THREE.Group){const positions:{x:number,y:number,z:number,s:number}[]=[];const cx=ix*SIZE,cz=iz*SIZE;
-  for(let i=0;i<42;i++){const x=cx+hash(ix,iz,i*2+5)*SIZE,z=cz+hash(ix,iz,i*2+6)*SIZE,y=elev(x,z);
-    if(y<WATER_LEVEL+1||roadDistance(x,z)<6)continue;
-    const aroundTown=ZONES.some((zone:any)=>zone.hub&&Math.hypot(x-zone.hub.x,z-zone.hub.z)<(zone.hub.radius||35)+5);
-    if(aroundTown)continue;
-    const nearBuilding=((BUILTIN_WORLD.props?.buildings||[]) as any[]).some(b=>{const p=pos(b);return p&&Math.abs(p.x-x)<9&&Math.abs(p.z-z)<9;});
-    if(nearBuilding)continue;
-    positions.push({x,y,z,s:.7+hash(ix,iz,i+410)*1.2});
+function trees(ix:number,iz:number,group:THREE.Group){
+  // Original ClaudeCraft foliage locations: no new random world geography.
+  const xs=ix*SIZE,zs=iz*SIZE;
+  const all=generateDecorationsInBounds(WORLD_SEED,{minX:xs,maxX:xs+SIZE-.01,minZ:zs,maxZ:zs+SIZE-.01});
+  const tree=all.filter(v=>v.kind==='tree'||v.kind==='tree2');
+  const rocks=all.filter(v=>v.kind==='rock');
+  const o=new THREE.Object3D();
+  if(tree.length){
+    const trunks=new THREE.InstancedMesh(trunkGeo,woodMat,tree.length),tops=new THREE.InstancedMesh(treeGeo,treeMat,tree.length);
+    tree.forEach((p,i)=>{const y=elev(p.x,p.z),s=Math.max(.65,p.scale);
+      o.scale.setScalar(s);o.position.set(p.x,y+s,p.z);o.updateMatrix();trunks.setMatrixAt(i,o.matrix);
+      o.position.y=y+3.35*s;o.updateMatrix();tops.setMatrixAt(i,o.matrix);});
+    trunks.instanceMatrix.needsUpdate=true;tops.instanceMatrix.needsUpdate=true;group.add(trunks,tops);
   }
-  if(!positions.length)return;const trunks=new THREE.InstancedMesh(trunkGeo,woodMat,positions.length),crowns=new THREE.InstancedMesh(treeGeo,treeMat,positions.length),o=new THREE.Object3D();
-  positions.forEach((p,i)=>{o.position.set(p.x,p.y+p.s,p.z);o.scale.setScalar(p.s);o.updateMatrix();trunks.setMatrixAt(i,o.matrix);
-    o.position.y=p.y+p.s*3.2;o.updateMatrix();crowns.setMatrixAt(i,o.matrix);});
-  trunks.instanceMatrix.needsUpdate=true;crowns.instanceMatrix.needsUpdate=true;group.add(trunks,crowns);
+  if(rocks.length){
+    const instances=new THREE.InstancedMesh(rockGeo,rockMat,rocks.length);
+    rocks.forEach((p,i)=>{const s=.45+Math.max(.3,p.scale)*.6;o.scale.set(s,s*.55,s);o.position.set(p.x,elev(p.x,p.z)+s*.18,p.z);o.rotation.y=p.variant; o.updateMatrix();instances.setMatrixAt(i,o.matrix);});
+    instances.instanceMatrix.needsUpdate=true;group.add(instances);
+  }
+}
+function eastbrookDressing(scene:THREE.Scene,templates:Map<string,THREE.Group>){
+  // Authoritative Eastbrook layout; the visual dressing is HIGHFLY authored.
+  const root=new THREE.Group();root.name='highfly-eastbrook-original-layout-dressing';
+  const town:any=EASTBROOK_LAYOUT;
+  const center=town.civic.center;
+  const pavemat=new THREE.MeshLambertMaterial({color:0x8e8a82,side:THREE.DoubleSide});
+  const tile=new THREE.BoxGeometry(1.7,.09,1.7);
+  for(let x=-8;x<=8;x+=2)for(let z=-8;z<=8;z+=2){
+    const cx=center.x+x,cz=center.z+z;
+    if(x*x+z*z>75)continue;
+    const mesh=new THREE.Mesh(tile,pavemat);mesh.position.set(cx,elev(cx,cz)+.055,cz);
+    mesh.userData.disposable=false;root.add(mesh);
+  }
+  for(const bench of town.civic.benches){
+    const p=pos(bench);if(!p)continue;box(root,1.7,.25,.65,woodMat,p.x,elev(p.x,p.z)+.52,p.z,Number(bench.rotation||0));
+  }
+  for(const fence of town.fences){
+    const a=pos(fence.start),b=pos(fence.end);if(!a||!b)continue;
+    const length=Math.hypot(b.x-a.x,b.z-a.z),step=Math.max(1,Math.ceil(length/1.6));
+    for(let i=0;i<=step;i++){const t=i/step,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;box(root,.18,1.15,.18,woodMat,x,elev(x,z),z);}
+  }
+  // The town's actual named landmark remains in its original location. Its
+  // sculpt is NOT imported until independently authorized.
+  const point=pos(town.civic.monument?.position);
+  if(point){box(root,2.1,.65,2.1,stoneMat,point.x,elev(point.x,point.z),point.z);
+    const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(.65,0),stallMat);
+    crystal.position.set(point.x,elev(point.x,point.z)+2.3,point.z);root.add(crystal);
+  }
+  // Visual small boats at the three authored piers. They are static HIGHFLY
+  // procedural previews, not yet the V7 ship GLTF or the ferry simulation.
+  for(const z of [-40,-54,-68]){
+    const boat=new THREE.Group();boat.position.set(-120,WATER_LEVEL+.7,z);
+    const hull=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.05,8,7,1),woodMat);
+    hull.rotation.z=Math.PI/2;hull.scale.set(1,.75,1);boat.add(hull);
+    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.08,.13,5.7,6),woodMat);
+    mast.position.y=3;boat.add(mast);
+    const sail=new THREE.Mesh(new THREE.PlaneGeometry(3.6,3.6),new THREE.MeshLambertMaterial({color:0xe8ddbb,side:THREE.DoubleSide}));
+    sail.position.set(0,3.4,0);sail.rotation.y=Math.PI/2;boat.add(sail);
+    root.add(boat);
+  }
+  scene.add(root);
 }
 function dispose(group:THREE.Group){group.traverse((obj:any)=>{if(obj.userData?.disposable&&obj.geometry)obj.geometry.dispose();});group.parent?.remove(group);}
 export class WorldStreamer{
@@ -105,6 +159,7 @@ export class WorldStreamer{
   public approvedVisible=0;public zones=ZONES.length;public lastZone='';
   constructor(private scene:THREE.Scene,private templates:Map<string,THREE.Group>){
     const harbor=buildEastbrookHarbor(WORLD_SEED);harbor.name='claudecraft-original-eastbrook-harbor';scene.add(harbor);
+    eastbrookDressing(scene,templates);
   }
   private load(ix:number,iz:number){const key=ix+','+iz;if(this.chunks.has(key))return;
     const group=new THREE.Group();group.name='world-sector-'+key;

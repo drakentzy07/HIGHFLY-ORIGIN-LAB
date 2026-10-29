@@ -1,4 +1,4 @@
-// HIGHFLY C0-I — stage ONLY the six exact CC0 assets in the signed allowlist.
+// HIGHFLY C0-K1 — stage ONLY the 18 audited CC0 assets in the signed allowlist.
 // Original KayKit and ClaudeCraft source remains in ephemeral Actions checkout.
 // No pack ZIP, source geometry collection, or other media enters the HIGHFLY repo.
 import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
@@ -7,8 +7,8 @@ import { join, dirname } from 'node:path';
 
 const root='highfly';
 const allow=JSON.parse(await readFile(join(root,'config/c0_approved_assets.json'),'utf8'));
-if(allow.schemaVersion!==1||allow.assets.length!==6)
-  throw Error('Unexpected candidate set; exactly six files required');
+if(allow.schemaVersion!==1||allow.assets.length!==18)
+  throw Error('Unexpected candidate set; exactly eighteen verified files required');
 const sourcePrefix='kaykit/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/';
 const source=(outpath)=>{
   if(outpath.startsWith('assets/kaykit/'))return sourcePrefix+outpath.slice('assets/kaykit/'.length);
@@ -54,4 +54,4 @@ await writeFile(join(root,'reports/c0/web/approved-media.json'),JSON.stringify({
   origin:'pinned KayKit official CC0 and ClaudeCraft v0.44.7 credited Quaternius wolf',
   files,playerAssetImported:false
 },null,2)+'\n');
-console.log('C0-I approved CC0 media staged:',JSON.stringify(files));
+console.log('C0-K1 approved CC0 media staged:',JSON.stringify(files));
