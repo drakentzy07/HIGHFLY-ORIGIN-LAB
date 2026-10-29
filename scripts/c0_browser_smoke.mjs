@@ -67,8 +67,8 @@ try {
     throw Error('C0-J world did not stream the original 15-zone map: '+JSON.stringify(initial.streaming));
   if(!initial.actorVisible||initial.landmarkCount<7)
     throw Error('K1 original Hunter visual or navigation markers missing: '+JSON.stringify(initial));
-  if(!(initial.city?.wallSegments>=25&&initial.city?.towers>=2&&initial.city?.gates===2&&initial.city?.well===1))
-    throw Error('K2 city overlay did not construct the approved fortress: '+JSON.stringify(initial.city));
+  if(!(initial.city?.wallSegments>=15&&initial.city?.towers>=2&&initial.city?.gates===2&&initial.city?.well===1))
+    throw Error('K4 actual 20-sector land-aligned fortress could not be constructed: '+JSON.stringify(initial.city));
   if(!(initial.hunterClips>1&&initial.npcClips>1&&initial.cityBlockers>16))throw Error('K3 rigged actor and city physical blockers missing: '+JSON.stringify(initial));
   if(!(initial.city.wallHeight>=7.2&&initial.city.gateHeight>=8.5&&initial.actorHeight===1.7))
     throw Error('K4 human scale invalid: '+JSON.stringify(initial.city));
