@@ -364,6 +364,15 @@
       "provider": "ambientCG — PavingStones046 CC0",
       "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/textures/terrain/PavingStones046_Color.jpg",
       "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/chars/wild_boar.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "83ccf701e4d9f3410743b6f84f9da2e7b4299d12",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — animated wild boar CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/creatures/wild_boar.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
     }
   ],
   "comment": "K3: 32 K2 hash-locked KayKit/Quaternius media plus 12 original pinned CC0 media verified by Git blob SHA-1 and runtime SHA-256. Runtime approval manifest written after source verification."

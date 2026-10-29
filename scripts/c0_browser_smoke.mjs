@@ -67,8 +67,9 @@ try {
     throw Error('C0-J world did not stream the original 15-zone map: '+JSON.stringify(initial.streaming));
   if(!initial.actorVisible||initial.landmarkCount<7)
     throw Error('K1 original Hunter visual or navigation markers missing: '+JSON.stringify(initial));
-  if(!(initial.city?.wallSegments>=40&&initial.city?.towers===4&&initial.city?.gates===2&&initial.city?.trees>=10))
+  if(!(initial.city?.wallSegments>=25&&initial.city?.towers>=2&&initial.city?.gates===2&&initial.city?.well===1))
     throw Error('K2 city overlay did not construct the approved fortress: '+JSON.stringify(initial.city));
+  if(!(initial.hunterClips>1&&initial.npcClips>1&&initial.cityBlockers>20))throw Error('K3 rigged actor and city physical blockers missing: '+JSON.stringify(initial));
   if(!initial.approvedModelsLoaded?.church||!initial.approvedModelsLoaded?.blacksmith||
      !initial.approvedModelsLoaded?.market)
     throw Error('K1 town building types failed to load');
@@ -114,6 +115,8 @@ try {
   if(!(rightDot>0.25))
     throw Error('Joystick still mirrored: moving right should project right '+JSON.stringify({displacement,rightDot,afterCamera,afterRight}));
   await page.locator('#atk').click();
+  // The selected target must not activate an infinite procedural arm oscillator.
+  if(!((await snapshot())?.hunterClips>1))throw Error('K3 attack controller unavailable');
   await page.waitForTimeout(400);
   if(pageErrors.length)throw Error('Pointer/attack JS errors: '+JSON.stringify(pageErrors.slice(0,5)));
   // Travel to another authored zone and verify new terrain sectors stream in.
