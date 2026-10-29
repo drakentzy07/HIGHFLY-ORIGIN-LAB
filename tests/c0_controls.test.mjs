@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cameraBasis,controlWorldVector,yawAfterDrag} from '../web/src/control_math.mjs';
+import {cameraBasis,controlWorldVector,yawAfterDrag,pitchAfterDrag,orbitCameraPosition,CAMERA_PITCH_MAX,CAMERA_PITCH_MIN} from '../web/src/control_math.mjs';
 
 const EPS=1e-10;
 function dot(a,b){return a.x*b.x+a.z*b.z;}
@@ -30,4 +30,24 @@ test('drag to right decreases yaw so the scenery follows the finger',()=>{
   assert.ok(yawAfterDrag(1,100)<1);
   assert.ok(yawAfterDrag(1,-100)>1);
   assert.equal(yawAfterDrag(1,0),1);
+});
+
+test('vertical drag UP looks UP; drag DOWN looks DOWN',()=>{
+  assert.ok(pitchAfterDrag(0.35,-80)<0.35);
+  assert.ok(pitchAfterDrag(0.35,80)>0.35);
+  assert.equal(pitchAfterDrag(0.35,0),0.35);
+  assert.equal(pitchAfterDrag(.35,-500),CAMERA_PITCH_MIN);
+  assert.equal(pitchAfterDrag(.35,500),CAMERA_PITCH_MAX);
+});
+test('pitch actually orbits 3D camera, not just adding constant height',()=>{
+  const focus={x:12,y:4,z:-11},yaw=-.4;
+  const low=orbitCameraPosition(focus,yaw,.10,15);
+  const high=orbitCameraPosition(focus,yaw,.90,15);
+  assert.ok(high.y>low.y+9,'camera rises to look down');
+  assert.ok(Math.hypot(high.x-focus.x,high.z-focus.z)<Math.hypot(low.x-focus.x,low.z-focus.z)-4,
+    'horizontal orbital radius changes with pitch');
+  for(const p of [-.25,.1,.45,1.08]){
+    const o=orbitCameraPosition(focus,yaw,p,15);
+    assert.ok(Math.abs(Math.hypot(o.x-focus.x,o.y-focus.y,o.z-focus.z)-15)<1e-9);
+  }
 });
