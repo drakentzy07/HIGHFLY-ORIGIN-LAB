@@ -10,7 +10,7 @@ import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
 import { BUILTIN_WORLD, PLAYER_START, ZONES, ITEMS, QUESTS } from '../../../upstream/src/sim/data.ts';
-import { terrainHeight, groundHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
+import { terrainHeight, groundHeight, waterLevelAt, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
 import { resolveMovement } from '../../../upstream/src/sim/colliders.ts';
 import { corpseCanInteract } from '../../../upstream/src/sim/corpse_interaction.ts';
 import { WorldStreamer } from './world_stream.ts';
@@ -297,7 +297,11 @@ function clock(t:number){
   const dt=Math.min(.05,Math.max(0,(t-lastFrame)/1000));lastFrame=t;
   if(!player)return;
   elapsed+=dt;simCarry+=dt;hudCarry+=dt;
-  hunterRig?.update(dt,Math.hypot(MOVE.x,MOVE.y)>.1);
+  const waterSurface=waterLevelAt(player.pos.x,player.pos.z,WORLD_SEED);
+  const support=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
+  const inDeepWater=Number.isFinite(waterSurface)&&Number.isFinite(support)&&support<waterSurface-.65;
+  hunterRig?.setDead((player.hp??1)<=0);
+  hunterRig?.update(dt,Math.hypot(MOVE.x,MOVE.y)>.1,inDeepWater);
   if(target&&((target.hp??0)<=0||dist2(target.pos,player.pos)>28*28))target=null;
   // Preview movement applies to the original Sim entity and heightfield. Not the
   // original final movement/physics API, which remains to be integrated.
@@ -307,11 +311,17 @@ function clock(t:number){
   if(keys.has('KeyD')||keys.has('ArrowRight'))ix+=1;
   if(keys.has('KeyA')||keys.has('ArrowLeft'))ix-=1;
   const mag=Math.hypot(ix,iy);
-  if(mag>.1){
+  if(mag>.1&&(player.hp??1)>0){
     ix/=Math.max(1,mag);iy/=Math.max(1,mag);
-    const speed=(dashLeft>0?18:7.2)*dt;
+    // Water traversal never uses ground-running speeds or a land dash.
+    const speed=(inDeepWater?3.6:(dashLeft>0?18:7.2))*dt;
     const direction=controlWorldVector(ix,iy,yaw);
-    const next=resolveMovement(WORLD_SEED,player.pos.x,player.pos.z,player.pos.x+direction.x*speed,player.pos.z+direction.z*speed);
+    const raw={x:player.pos.x+direction.x*speed,z:player.pos.z+direction.z*speed};
+    // K4 expanded its models but retained the old/small upstream town
+    // footprints: those caused invisible walls. In the new town use ONLY
+    // visibly matched house and fortress collision from WorldStreamer.
+    const next=worldStreamer?.usesNewCityCollision(player.pos.x,player.pos.z)?raw:
+      resolveMovement(WORLD_SEED,player.pos.x,player.pos.z,raw.x,raw.z);
     const fixed=worldStreamer?.solveMove(player.pos.x,player.pos.z,next.x,next.z)??next;
     player.pos.x=fixed.x;
     player.pos.z=fixed.z;
@@ -331,7 +341,12 @@ function clock(t:number){
     try{sim.tick();}catch(err){status.textContent='Sim runtime error: '+String(err);simCarry=0;break;}
   }
   const y=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
-  playerMesh.position.set(player.pos.x,Number.isFinite(y)?y+jumpOffset:player.pos.y+jumpOffset,player.pos.z);
+  const currentWater=waterLevelAt(player.pos.x,player.pos.z,WORLD_SEED);
+  const swimming=Number.isFinite(currentWater)&&Number.isFinite(y)&&y<currentWater-.65;
+  // Surface float is based on water level, not seabed. Decks still use the
+  // genuine groundHeight so players can walk normally across existing piers.
+  const visualY=swimming?currentWater-.70+Math.sin(elapsed*3.6)*.055:(Number.isFinite(y)?y+jumpOffset:player.pos.y+jumpOffset);
+  playerMesh.position.set(player.pos.x,visualY,player.pos.z);
   playerMesh.rotation.y=player.facing||0;
   const focus=new THREE.Vector3(player.pos.x,playerMesh.position.y+1.28,player.pos.z);
   const distance=11;
@@ -385,7 +400,7 @@ async function initialize(){
     realBuildingsShown=worldStreamer.approvedVisible;
     const buildings=realBuildingsShown;
     updateEntities();
-    status.textContent='K4 · '+buildings+' recursos CC0, '+worldStreamer.shipCount+' barcos en puerto';
+    status.textContent='K5 · '+buildings+' modelos CC0, '+worldStreamer.shipCount+' barcos junto al muelle';
     const zonesSelect=document.getElementById('zoneJump') as HTMLSelectElement|null;
     if(zonesSelect){for(let i=0;i<ZONES.length;i++){const opt=document.createElement('option');opt.value=String(i);opt.textContent=(i+1)+'. '+ZONES[i].name;zonesSelect.appendChild(opt);}
       zonesSelect.addEventListener('change',()=>{const zone=ZONES[Number(zonesSelect.value)];if(!zone)return;
@@ -417,7 +432,7 @@ async function initialize(){
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
       yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),church:buildingVisuals.has('church'),blacksmith:buildingVisuals.has('blacksmith'),market:buildingVisuals.has('market'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
       forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,ships:worldStreamer?.shipCount,gatePassages:worldStreamer?.getGateDiagnostics(),
-      inventorySlots:inventorySlots().length,nearbyCorpses:[...sim.entities.values()].filter((e:any)=>corpseCanInteract(e)&&dist2(e.pos,player.pos)<25).length,
+      harborBerths:worldStreamer?.harborBerths,swimming:swimming,inventorySlots:inventorySlots().length,nearbyCorpses:[...sim.entities.values()].filter((e:any)=>corpseCanInteract(e)&&dist2(e.pos,player.pos)<25).length,
       actorHeight:worldStreamer?.city?.actorHeight,cityBlockers:worldStreamer?.blockerCount,hunterClips:hunterRig?.clipCount,npcClips:npcClips.length,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
     }),configurable:false});
     loader.style.display='none';
