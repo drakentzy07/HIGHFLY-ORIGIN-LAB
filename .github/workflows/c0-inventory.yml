@@ -1,0 +1,40 @@
+name: C0 upstream inventory (no code or assets copied)
+
+on:
+  push:
+    branches:
+      - c0-audit-claudecraft-v0447
+    paths:
+      - "scripts/c0_inventory.mjs"
+      - "tests/c0_inventory.test.mjs"
+      - ".github/workflows/c0-inventory.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upstream-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - name: Checkout HIGHFLY C0 only
+        uses: actions/checkout@v4
+      - name: Prepare Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test classification rules
+        run: node --test tests/c0_inventory.test.mjs
+      - name: Inventory exact upstream v0.44.7 using GitHub tree API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/c0_inventory.mjs
+      - name: Upload manifest, credits registry and summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: highfly-c0-upstream-inventory
+          path: reports/c0/
+          if-no-files-found: warn
+          retention-days: 14
