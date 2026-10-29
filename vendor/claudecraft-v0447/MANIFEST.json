@@ -1,0 +1,33 @@
+{
+  "upstream": "https://github.com/levy-street/world-of-claudecraft",
+  "tag": "v0.44.7",
+  "sourceCommit": "493c35a108cef6c8aa290e8793107b1cd117886e",
+  "policy": "Only independently inspected MIT source staged; no art, data, models, audio or game build copied.",
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha1": "edc043017f293aec4b49fdd2a41a2bc1efd8d784",
+      "origin": "MIT license"
+    },
+    {
+      "path": "src/sim/rng.ts",
+      "sha1": "b53138b95148f9721dafc6a0f8bcc6458d09368b",
+      "origin": "deterministic RNG and noise"
+    },
+    {
+      "path": "src/sim/world_seed.ts",
+      "sha1": "8e7963ec845ae12d481e45ed78ac62d7236a5393",
+      "origin": "world seed constant"
+    },
+    {
+      "path": "src/sim/geometry2d.ts",
+      "sha1": "5d9fc4888ad993f951570f252f49591e8c8346ff",
+      "origin": "pure world polygon geometry"
+    },
+    {
+      "path": "src/sim/mob/aggro_ranges.ts",
+      "sha1": "7ecc7df41112a345a4b01f707d24301133c34c6d",
+      "origin": "enemy aggro range constants"
+    }
+  ]
+}
