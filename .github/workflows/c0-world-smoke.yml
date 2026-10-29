@@ -5,6 +5,7 @@ on:
     branches: [c0-audit-claudecraft-v0447]
     paths:
       - "scripts/c0_world_smoke.ts"
+      - "package.json"
       - ".github/workflows/c0-world-smoke.yml"
   workflow_dispatch:
 
