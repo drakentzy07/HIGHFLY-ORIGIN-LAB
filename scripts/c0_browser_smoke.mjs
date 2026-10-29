@@ -59,6 +59,27 @@ try {
   const afterCamera=await snapshot();
   if(!(afterCamera.yaw<initial.yaw-0.15))
     throw Error('Camera inversion persists: drag right did not decrease yaw '+JSON.stringify({initial,afterCamera}));
+  // Verify real vertical dragging in touch-sized Chromium, without changing yaw.
+  await page.mouse.move(740,220);
+  await page.mouse.down();
+  await page.mouse.move(740,120,{steps:6});
+  await page.mouse.up();
+  await page.waitForTimeout(220);
+  const afterUp=await snapshot();
+  if(!(afterUp.pitch < afterCamera.pitch - .25))
+    throw Error('Swipe UP did not look UP: '+JSON.stringify({before:afterCamera,afterUp}));
+  await page.mouse.move(740,120);
+  await page.mouse.down();
+  await page.mouse.move(740,275,{steps:7});
+  await page.mouse.up();
+  await page.waitForTimeout(280);
+  const afterDown=await snapshot();
+  if(!(afterDown.pitch > afterUp.pitch + .4))
+    throw Error('Swipe DOWN did not look DOWN: '+JSON.stringify({afterUp,afterDown}));
+  if(Math.abs(afterDown.yaw-afterCamera.yaw)>1e-4)
+    throw Error('Vertical swipe wrongly changed horizontal aim');
+  if(!(afterDown.camera.y > afterUp.camera.y+1))
+    throw Error('Camera elevation did not follow vertical orbit');
   const stickBox=await page.locator('#stick').boundingBox();
   if(!stickBox) throw Error('Touch joystick missing');
   const cx=stickBox.x+stickBox.width/2,cy=stickBox.y+stickBox.height/2;
@@ -79,6 +100,9 @@ try {
   await page.screenshot({path:'highfly/reports/c0/browser/landscape.png'});
   const report={passed:true,view:'915x412 mobile landscape',canvas,stats,status,
     cameraSwipeRightYawDelta:afterCamera.yaw-initial.yaw,
+    swipeUpPitchDelta:afterUp.pitch-afterCamera.pitch,
+    swipeDownPitchDelta:afterDown.pitch-afterUp.pitch,
+    cameraElevationDifference:afterDown.camera.y-afterUp.camera.y,
     joystickRightScreenProjection:rightDot,
     afterAttack:await page.locator('#status').innerText(),pageErrors};
   await writeFile('highfly/reports/c0/browser/summary.json',JSON.stringify(report,null,2)+'\n');
