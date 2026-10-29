@@ -317,11 +317,11 @@ function clock(t:number){
     const speed=(inDeepWater?3.6:(dashLeft>0?18:7.2))*dt;
     const direction=controlWorldVector(ix,iy,yaw);
     const raw={x:player.pos.x+direction.x*speed,z:player.pos.z+direction.z*speed};
-    // K4 expanded its models but retained the old/small upstream town
-    // footprints: those caused invisible walls. In the new town use ONLY
-    // visibly matched house and fortress collision from WorldStreamer.
-    const next=worldStreamer?.usesNewCityCollision(player.pos.x,player.pos.z)?raw:
-      resolveMovement(WORLD_SEED,player.pos.x,player.pos.z,raw.x,raw.z);
+    // Use original simulation physics as the FIRST movement layer; removing
+    // it here made K5's mob/character tick snap movement back to the origin.
+    // Our matched highfly city shells then add wall collision without
+    // replacing the simulation engine's own authoritative travel rules.
+    const next=resolveMovement(WORLD_SEED,player.pos.x,player.pos.z,raw.x,raw.z);
     const fixed=worldStreamer?.solveMove(player.pos.x,player.pos.z,next.x,next.z)??next;
     player.pos.x=fixed.x;
     player.pos.z=fixed.z;
