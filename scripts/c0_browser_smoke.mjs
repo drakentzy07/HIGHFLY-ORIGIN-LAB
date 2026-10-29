@@ -68,13 +68,18 @@ try {
   if(!initial.actorVisible||initial.landmarkCount<7)
     throw Error('K1 original Hunter visual or navigation markers missing: '+JSON.stringify(initial));
   if(!(initial.city?.wallSegments>=15&&initial.city?.towers>=2&&initial.city?.gates===2&&initial.city?.well===1))
-    throw Error('K4 actual 20-sector land-aligned fortress could not be constructed: '+JSON.stringify(initial.city));
+    throw Error('K5 enlarged waterfront fortress could not be constructed: '+JSON.stringify(initial.city));
   if(!(initial.hunterClips>1&&initial.npcClips>1&&initial.cityBlockers>16))throw Error('K3 rigged actor and city physical blockers missing: '+JSON.stringify(initial));
   if(!(initial.city.wallHeight>=7.2&&initial.city.gateHeight>=8.5&&initial.actorHeight===1.7))
     throw Error('K4 human scale invalid: '+JSON.stringify(initial.city));
   if(initial.gatePassages?.length!==2||initial.gatePassages.some(g=>g.blocked))
     throw Error('K4 gates must remain physically walkable: '+JSON.stringify(initial.gatePassages));
-  if(!(initial.ships>=2))throw Error('K4 harbour missing: '+initial.ships);
+  if(!(initial.ships>=2))throw Error('K5 harbour missing: '+initial.ships);
+  if(initial.city?.cityRadius!==72||initial.city?.originalLots<11)
+    throw Error('K5 expanded city must enclose original town lots without moving them: '+JSON.stringify(initial.city));
+  if(!initial.harborBerths||initial.harborBerths.length!==initial.ships||
+     initial.harborBerths.some(p=>p.x>-108||p.x<-123||p.z<-84||p.z>-40))
+    throw Error('K5 vessels were not placed beside authored three-pier harbor: '+JSON.stringify(initial.harborBerths));
   if(!(await page.locator('#use').isVisible())||!(await page.locator('#bag').isVisible()))
     throw Error('K4 corpse / NPC or inventory HUD missing');
   await page.locator('#bag').click();
