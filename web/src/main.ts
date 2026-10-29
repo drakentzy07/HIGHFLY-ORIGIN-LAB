@@ -40,7 +40,7 @@ let prevCameraX=0,prevCameraY=0;
 let lastFrame=performance.now(), elapsed=0, simCarry=0, hudCarry=0;
 let sim:any, player:any, playerId=0;
 let target:any=null;
-let announcementUntil=0,inventoryOpen=false,swimming=false;
+let announcementUntil=0,inventoryOpen=false,swimming=false,deadSeconds=0;
 const useButton=document.getElementById('use') as HTMLButtonElement;
 const bagButton=document.getElementById('bag') as HTMLButtonElement;
 const panel=document.getElementById('inventory') as HTMLDivElement;
@@ -340,6 +340,20 @@ function clock(t:number){
     simCarry-=.05;
     try{sim.tick();}catch(err){status.textContent='Sim runtime error: '+String(err);simCarry=0;break;}
   }
+  // Native Sim resurrection keeps HP/combat bookkeeping in the real game engine.
+  if((player.hp??1)<=0){
+    deadSeconds+=dt;
+    if(deadSeconds>=3.5){
+      const x=-7,z=-101;
+      try{
+        sim.revivePlayerAt(playerId,{x,y:groundHeight(x,z,WORLD_SEED),z},1);
+        target=null;jumpOffset=0;jumpSpeed=0;dashLeft=0;
+        worldStreamer?.update(x,z,true);
+        notify('Has reaparecido en la ciudad tras caer en combate.');
+      }catch(error){notify('No se pudo reaparecer: '+String(error).slice(0,120));}
+      deadSeconds=0;
+    }
+  }else deadSeconds=0;
   const y=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
   const currentWater=waterLevelAt(player.pos.x,player.pos.z,WORLD_SEED);
   swimming=Number.isFinite(currentWater)&&Number.isFinite(y)&&y<currentWater-.65;
@@ -432,7 +446,7 @@ async function initialize(){
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
       yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),church:buildingVisuals.has('church'),blacksmith:buildingVisuals.has('blacksmith'),market:buildingVisuals.has('market'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
       forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,ships:worldStreamer?.shipCount,gatePassages:worldStreamer?.getGateDiagnostics(),
-      harborBerths:worldStreamer?.harborBerths,swimming:swimming,inventorySlots:inventorySlots().length,nearbyCorpses:[...sim.entities.values()].filter((e:any)=>corpseCanInteract(e)&&dist2(e.pos,player.pos)<25).length,
+      harborBerths:worldStreamer?.harborBerths,swimming:swimming,playerHp:player.hp,playerDead:player.dead,deathSeconds:deadSeconds,inventorySlots:inventorySlots().length,nearbyCorpses:[...sim.entities.values()].filter((e:any)=>corpseCanInteract(e)&&dist2(e.pos,player.pos)<25).length,
       actorHeight:worldStreamer?.city?.actorHeight,cityBlockers:worldStreamer?.blockerCount,hunterClips:hunterRig?.clipCount,npcClips:npcClips.length,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
     }),configurable:false});
     loader.style.display='none';
