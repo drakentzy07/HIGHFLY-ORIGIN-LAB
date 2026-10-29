@@ -1,0 +1,28 @@
+name: C0-F release gate unit tests (no deployment)
+
+on:
+  push:
+    branches: [c0-audit-claudecraft-v0447]
+    paths:
+      - "scripts/c0_release_gate.mjs"
+      - "tests/c0_release_gate.test.mjs"
+      - "config/c0_approved_assets.json"
+      - ".github/workflows/c0-release-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  license-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout HIGHFLY tests
+        uses: actions/checkout@v4
+      - name: Prepare Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test approval policy, hash mismatch, restrictive media block
+        run: node --test tests/c0_release_gate.test.mjs
