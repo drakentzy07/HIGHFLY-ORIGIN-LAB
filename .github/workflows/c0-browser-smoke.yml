@@ -6,6 +6,7 @@ on:
     paths:
       - "web/**"
       - "scripts/c0_browser_smoke.mjs"
+      - "tests/c0_controls.test.mjs"
       - "scripts/c0_build_web.mjs"
       - ".github/workflows/c0-browser-smoke.yml"
   workflow_dispatch:
@@ -40,6 +41,8 @@ jobs:
           node-version: "22"
       - name: Install esbuild, Three.js and Chrome automation driver
         run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0 playwright-core@1.61.1
+      - name: Assert left/right camera-relative motion mathematics
+        run: node --test highfly/tests/c0_controls.test.mjs
       - name: Build original-code browser simulation
         run: node highfly/scripts/c0_build_web.mjs
       - name: Licence and asset gate
