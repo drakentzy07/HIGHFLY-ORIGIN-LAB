@@ -4,6 +4,7 @@
 // Controls/dash/jump are provisional visualization controls, NOT final Fury 360.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
@@ -31,6 +32,7 @@ let lastFrame=performance.now(), elapsed=0, simCarry=0, hudCarry=0;
 let sim:any, player:any, playerId=0;
 let target:any=null;
 const approvedLoader=new GLTFLoader();
+approvedLoader.setMeshoptDecoder(MeshoptDecoder);
 const buildingVisuals=new Map<string,THREE.Group>();
 let wolfVisual:THREE.Group|null=null;
 let wolfClips:THREE.AnimationClip[]=[];
