@@ -8,6 +8,9 @@ on:
       - "scripts/c0_browser_smoke.mjs"
       - "tests/c0_controls.test.mjs"
       - "scripts/c0_build_web.mjs"
+      - "scripts/c0_release_gate.mjs"
+      - "scripts/c0_stage_cc0_media.mjs"
+      - "config/c0_approved_assets.json"
       - "scripts/c0_stage_cc0_media.mjs"
       - ".github/workflows/c0-browser-smoke.yml"
   workflow_dispatch:
