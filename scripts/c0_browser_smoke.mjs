@@ -39,7 +39,12 @@ try {
     console.error('LOADER TEXT:',await page.locator('#loadText').textContent());
     throw e;
   }
-  await page.waitForTimeout(1800);
+  // K2 can stream many original-heightfield sectors plus CC0 fortress models.
+  // The loader disappearing is not enough: wait for the first SIM/HUD frame.
+  await page.waitForFunction(
+    "() => /Nivel|Level/.test(document.querySelector('#stats')?.textContent || '')",
+    null,{timeout:60000}
+  );
   const stats=await page.locator('#stats').innerText();
   const status=await page.locator('#status').innerText();
   const canvas=await page.locator('#stage').evaluate(el=>({
