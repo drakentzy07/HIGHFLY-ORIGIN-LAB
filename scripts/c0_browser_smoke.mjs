@@ -48,17 +48,38 @@ try {
   if(!stats.includes('Level')||!status.includes('Zone'))throw Error('HUD not populated: '+JSON.stringify({stats,status}));
   if(!canvas.width||!canvas.height||!canvas.webglAvailable)throw Error('WebGL canvas missing '+JSON.stringify(canvas));
   if(pageErrors.length)throw Error('Browser JS errors: '+JSON.stringify(pageErrors.slice(0,5)));
-  // Exercise real pointer camera orbit on the right, then attack button.
+  // Check the actual pointer event path and world positions, not only math tests.
+  const snapshot = () => page.evaluate(() => window.__HIGHFLY_C0_CONTROL_DIAG__?.());
+  const initial = await snapshot();
+  if(!initial) throw Error('C0-H control diagnostics missing');
   await page.mouse.move(750,190);
   await page.mouse.down();
   await page.mouse.move(830,215,{steps:4});
   await page.mouse.up();
+  const afterCamera=await snapshot();
+  if(!(afterCamera.yaw<initial.yaw-0.15))
+    throw Error('Camera inversion persists: drag right did not decrease yaw '+JSON.stringify({initial,afterCamera}));
+  const stickBox=await page.locator('#stick').boundingBox();
+  if(!stickBox) throw Error('Touch joystick missing');
+  const cx=stickBox.x+stickBox.width/2,cy=stickBox.y+stickBox.height/2;
+  await page.mouse.move(cx,cy);
+  await page.mouse.down();
+  await page.mouse.move(cx+stickBox.width*0.26,cy,{steps:4});
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+  const afterRight=await snapshot();
+  const displacement={x:afterRight.position.x-afterCamera.position.x,z:afterRight.position.z-afterCamera.position.z};
+  const rightDot=displacement.x*afterCamera.right.x+displacement.z*afterCamera.right.z;
+  if(!(rightDot>0.25))
+    throw Error('Joystick still mirrored: moving right should project right '+JSON.stringify({displacement,rightDot,afterCamera,afterRight}));
   await page.locator('#atk').click();
   await page.waitForTimeout(400);
   if(pageErrors.length)throw Error('Pointer/attack JS errors: '+JSON.stringify(pageErrors.slice(0,5)));
   await mkdir('highfly/reports/c0/browser',{recursive:true});
   await page.screenshot({path:'highfly/reports/c0/browser/landscape.png'});
   const report={passed:true,view:'915x412 mobile landscape',canvas,stats,status,
+    cameraSwipeRightYawDelta:afterCamera.yaw-initial.yaw,
+    joystickRightScreenProjection:rightDot,
     afterAttack:await page.locator('#status').innerText(),pageErrors};
   await writeFile('highfly/reports/c0/browser/summary.json',JSON.stringify(report,null,2)+'\n');
   console.log('C0-G BROWSER GREEN: '+JSON.stringify(report));
