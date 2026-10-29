@@ -1,4 +1,4 @@
-name: C0-G publish zero-media WebGL prototype to GitHub Pages
+name: C0-G publish approved-CC0 WebGL prototype to GitHub Pages
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
     paths:
       - "web/**"
       - "scripts/c0_build_web.mjs"
+      - "scripts/c0_stage_cc0_media.mjs"
       - "scripts/c0_release_gate.mjs"
       - "config/c0_approved_assets.json"
       - ".github/workflows/c0-pages-prototype.yml"
@@ -42,6 +43,21 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             src
+            CREDITS.md
+            public/models/creatures
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Checkout pinned official KayKit CC0 buildings
+        uses: actions/checkout@v4
+        with:
+          repository: KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0
+          ref: 84fa4e91af6a88989be7c99e0891cede11f2ca38
+          path: kaykit
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            LICENSE.txt
+            addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue
           sparse-checkout-cone-mode: true
           persist-credentials: false
       - name: Node
@@ -52,6 +68,8 @@ jobs:
         run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0
       - name: Build original world with original CODE and custom zero-asset renderer
         run: node highfly/scripts/c0_build_web.mjs
+      - name: Stage six verified CC0 model files (2 buildings + wolf)
+        run: node highfly/scripts/c0_stage_cc0_media.mjs
       - name: Hard license and no-prohibited-media gate
         run: node highfly/scripts/c0_release_gate.mjs highfly/dist highfly/config/c0_approved_assets.json
       - name: Prepare GitHub Pages
