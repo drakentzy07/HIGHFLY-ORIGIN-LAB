@@ -1,0 +1,37 @@
+name: K6 HIGHFLY MIT Editor & Asset Policy Audit
+
+on:
+  push:
+    branches:
+      - k6-full-world-editor-license-recovery
+    paths:
+      - 'editor/**'
+      - 'config/k6_upstream_media_glossary.json'
+      - 'config/c0_approved_assets.json'
+      - 'vendor/claudecraft-v0447/**'
+      - 'tests/k6_*.test.mjs'
+      - '.github/workflows/k6-editor-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: k6-editor-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editor-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Exact-source and independence tests (no assets fetched)
+        run: node --test tests/k6_*.test.mjs
+      - name: Explain what this gate does NOT cover
+        run: |
+          echo "PASS only means editor rules, MIT provenance, and glossary schema are valid."
+          echo "The full 3D editor, full world, and all per-asset licenses remain to be integrated/tested."
+          echo "This workflow neither builds nor publishes GitHub Pages."
