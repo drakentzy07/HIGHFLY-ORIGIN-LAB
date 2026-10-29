@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#070d15" />
+  <title>HIGHFLY ORIGIN — C0-G World Systems Lab</title>
+  <style>
+  *{box-sizing:border-box} html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070e19;font-family:system-ui,-apple-system,sans-serif;color:#f4f8ff;touch-action:none;overscroll-behavior:none}
+  #stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .hud{position:absolute;inset:0;pointer-events:none}
+  .top{position:absolute;top:max(12px,env(safe-area-inset-top));left:max(14px,env(safe-area-inset-left));right:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;text-shadow:0 2px 4px #000}
+  .brand{font-size:13px;color:#74f2f0;font-weight:900;letter-spacing:.16em}
+  .mini{font-size:10px;opacity:.88;margin-top:4px}.small{font-size:11px;color:#b5d3dd}
+  #stats{font-size:11px;padding:8px 10px;background:rgba(4,11,26,.75);border:1px solid #2a5367;border-radius:11px;max-width:45%;text-align:right}
+  .bar{width:165px;max-width:100%;height:7px;border-radius:6px;background:#2b3d44;margin-top:5px;overflow:hidden}.bar i{height:100%;width:100%;display:block;background:linear-gradient(90deg,#dc3763,#ff7d8d)}
+  #status{position:absolute;top:65px;left:14px;font-size:11px;background:#07101ccd;border-radius:8px;padding:7px 10px;max-width:290px;line-height:1.5}
+  #hint{position:absolute;left:50%;top:15%;transform:translateX(-50%);text-align:center;white-space:nowrap;font-size:11px;background:#06151acc;border:1px solid #276273;border-radius:8px;padding:9px 13px}
+  #stick{pointer-events:auto;position:absolute;left:max(20px,env(safe-area-inset-left));bottom:max(22px,env(safe-area-inset-bottom));width:120px;height:120px;border:2px solid #43839d99;border-radius:50%;background:#10273988;touch-action:none}
+  #nub{position:absolute;left:50%;top:50%;width:51px;height:51px;transform:translate(-50%,-50%);border:2px solid #7be6ff;border-radius:50%;background:radial-gradient(#47bad377,#0b2b50dd)}
+  #actions{position:absolute;bottom:max(25px,env(safe-area-inset-bottom));right:max(18px,env(safe-area-inset-right));pointer-events:auto;display:flex;align-items:center;gap:10px}
+  .btn{border-radius:50%;border:2px solid #3d83a1;background:#071a31dd;color:white;font-size:12px;font-weight:800;box-shadow:0 0 18px #071625;touch-action:none}
+  #atk{width:80px;height:80px;border-color:#52d6fd;background:radial-gradient(#164a68,#071a35)}#jump{width:61px;height:61px}#dash{width:61px;height:61px}
+  .foot{position:absolute;bottom:5px;left:50%;transform:translateX(-50%);color:#a4cbd4;font-size:9px;white-space:nowrap;text-align:center}
+  #loading{position:absolute;inset:0;background:linear-gradient(150deg,#050b19,#143449);display:flex;align-items:center;justify-content:center;text-align:center;z-index:5;padding:20px}
+  #loading div{max-width:460px}#loading h1{letter-spacing:.12em;color:#72e7f9;font-size:clamp(22px,4vw,40px);margin:0 0 12px}#loading p{color:#b9dfec;font-size:13px;line-height:1.65}
+  @media(max-height:430px){.top{top:7px}.brand{font-size:11px}.bar{height:5px}#status{top:55px}#stick{width:104px;height:104px;bottom:9px}#atk{width:66px;height:66px}#jump,#dash{width:49px;height:49px}#actions{bottom:9px}.foot{display:none}}
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div class="hud">
+    <div class="top"><div><div class="brand">HIGHFLY <span style="color:#fff">ORIGIN</span></div><div class="mini">C0-G · ORIGINAL WORLD / VISUAL DIAGNOSTIC</div><div class="bar"><i id="hpbar"></i></div></div><div id="stats">Waiting for world…</div></div>
+    <div id="status">World: initializing…</div>
+    <div id="hint">Left stick: move · Right side: look · Desktop: WASD + drag</div>
+    <div id="stick"><div id="nub"></div></div>
+    <div id="actions"><button id="jump" class="btn">JUMP</button><button id="dash" class="btn">DASH</button><button id="atk" class="btn">ATK</button></div>
+    <div class="foot">MIT WORLD SIMULATION · ORIGINAL PROCEDURAL VISUALS · NO THIRD-PARTY GLB</div>
+  </div>
+  <div id="loading"><div><h1>HIGHFLY ORIGIN</h1><p id="loadText">Loading original ClaudeCraft v0.44.7 world simulation…</p><p>Prototype visualization: temporary geometric representations, not final KayKit assets.</p></div></div>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
