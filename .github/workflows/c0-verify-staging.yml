@@ -1,0 +1,28 @@
+name: C0 verify staged MIT source
+
+on:
+  push:
+    branches:
+      - c0-audit-claudecraft-v0447
+    paths:
+      - "vendor/claudecraft-v0447/**"
+      - "scripts/c0_verify_vendored.mjs"
+      - ".github/workflows/c0-verify-staging.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-blobs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout HIGHFLY
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify pristine upstream files and deny extras
+        run: node scripts/c0_verify_vendored.mjs
