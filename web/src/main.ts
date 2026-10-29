@@ -3,6 +3,8 @@
 // NO asset files, GLBs, icons, screenshots or sounds are included.
 // Controls/dash/jump are provisional visualization controls, NOT final Fury 360.
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
 import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/data.ts';
@@ -28,6 +30,13 @@ let prevCameraX=0,prevCameraY=0;
 let lastFrame=performance.now(), elapsed=0, simCarry=0, hudCarry=0;
 let sim:any, player:any, playerId=0;
 let target:any=null;
+const approvedLoader=new GLTFLoader();
+const buildingVisuals=new Map<string,THREE.Group>();
+let wolfVisual:THREE.Group|null=null;
+let wolfClips:THREE.AnimationClip[]=[];
+const wolfMixers=new Map<number,THREE.AnimationMixer>();
+let realBuildingsShown=0;
+let realWolvesShown=0;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87bbd3);
@@ -61,6 +70,22 @@ pointer.rotation.x=Math.PI/2;pointer.position.set(0,2.0,0.68);playerMesh.add(poi
 scene.add(playerMesh);
 
 const height=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
+const approvedUrl=(path:string)=>new URL('./'+path,document.baseURI).href;
+async function loadApprovedModels(){
+  // Exact six files are SHA-256 verified against pinned sources in CI.
+  // This is one house, one tavern, and one animated wolf. No player model.
+  const [house,tavern,wolf]=await Promise.all([
+    approvedLoader.loadAsync(approvedUrl('assets/kaykit/building_home_A_blue.gltf')),
+    approvedLoader.loadAsync(approvedUrl('assets/kaykit/building_tavern_blue.gltf')),
+    approvedLoader.loadAsync(approvedUrl('assets/quaternius/wolf.glb'))
+  ]);
+  buildingVisuals.set('house',house.scene);
+  buildingVisuals.set('tavern',tavern.scene);
+  wolfVisual=wolf.scene;
+  wolfClips=wolf.animations;
+  if(!wolfVisual)throw Error('The vetted wolf asset was not loaded');
+}
+
 function posOf(item:any):{x:number,z:number}|null{
   if(!item||typeof item!=='object')return null;
   const base=item.pos||item.position||item.center||item;
@@ -134,6 +159,24 @@ function renderBuildings(cx:number,cz:number){
     const d=Math.max(4,Math.min(20,Number(b.d??b.depth??9)));
     const h=Math.max(4,Math.min(18,Number(b.h??b.height??5.5)));
     const y=height(p.x,p.z);
+    const key=String(b.assetId||'').toLowerCase();
+    const kind=String(b.kind||'').toLowerCase();
+    const selected=/tavern|inn/.test(key+' '+kind)?'tavern':(/home|house/.test(key+' '+kind)?'house':null);
+    const template=selected?buildingVisuals.get(selected):null;
+    if(template){
+      const model=template.clone(true);
+      const bounds=new THREE.Box3().setFromObject(model);
+      const size=new THREE.Vector3();bounds.getSize(size);
+      const scale=Math.max(.01,Math.min(w/Math.max(.01,size.x),d/Math.max(.01,size.z)));
+      model.scale.setScalar(scale);
+      model.position.set(p.x,y-bounds.min.y*scale,p.z);
+      model.rotation.y=Number(b.rot??0);
+      model.userData.provenance='Pinned official KayKit Medieval Hexagon CC0';
+      scene.add(model);
+      realBuildingsShown++;
+      count++;
+      continue;
+    }
     const base=addMesh(new THREE.BoxGeometry(w,h,d),buildingMat,p.x,y+h/2,p.z,Number(b.rot??0));
     base.userData.provenance='Original BUILTIN_WORLD building placement; original mesh replaced';
     const roof=addMesh(new THREE.ConeGeometry(Math.max(w,d)*.78,3.9,4),roofMat,
@@ -176,15 +219,31 @@ function renderTemporaryVegetation(cx:number,cz:number) {
 const entityMeshes=new Map<number,THREE.Group>();
 function makeEntity(e:any){
   const group=new THREE.Group();
-  let model:THREE.Mesh;
+  let model:THREE.Object3D;
   if(e.kind==='npc'){
     model=new THREE.Mesh(new THREE.CapsuleGeometry(.49,1.2,3,6),npcMat);
     model.position.y=1.45;
   }else{
-    const wolf=/wolf|hound|fox|boar/i.test((e.templateId||'')+' '+(e.name||''));
-    model=new THREE.Mesh(wolf?new THREE.BoxGeometry(1.8,.9,2.35):new THREE.IcosahedronGeometry(.82,0),
-      wolf?wolfMat:otherMobMat);
-    model.position.y=wolf ? 0.90 : 1.1;
+    const wolf=/wolf|hound/i.test((e.templateId||'')+' '+(e.name||''));
+    if(wolf&&wolfVisual&&realWolvesShown<12){
+      model=cloneSkinned(wolfVisual);
+      const bbox=new THREE.Box3().setFromObject(model);
+      const size=new THREE.Vector3();bbox.getSize(size);
+      const sizeScale=1.8/Math.max(.1,size.x,size.z);
+      model.scale.setScalar(sizeScale);
+      model.position.y=-bbox.min.y*sizeScale;
+      group.userData.approvedWolf=true;
+      realWolvesShown++;
+      if(wolfClips.length){
+        const mixer=new THREE.AnimationMixer(model);
+        const clip=wolfClips.find(x=>/idle/i.test(x.name))||wolfClips[0];
+        mixer.clipAction(clip).play();
+        wolfMixers.set(e.id,mixer);
+      }
+    }else{
+      model=new THREE.Mesh(wolf?new THREE.BoxGeometry(1.8,.9,2.35):new THREE.IcosahedronGeometry(.82,0),wolf?wolfMat:otherMobMat);
+      model.position.y=wolf ? 0.90 : 1.1;
+    }
   }
   group.add(model);
   if(e.kind==='npc'){
@@ -207,7 +266,10 @@ function updateEntities(){
     group.rotation.y=e.facing||0;
   }
   for(const [id,group] of entityMeshes)
-    if(!seen.has(id)){scene.remove(group);entityMeshes.delete(id);}
+    if(!seen.has(id)){
+      if(group.userData.approvedWolf)realWolvesShown--;
+      wolfMixers.delete(id);scene.remove(group);entityMeshes.delete(id);
+    }
 }
 function resize(){
   renderer.setSize(window.innerWidth,window.innerHeight,false);
@@ -276,6 +338,7 @@ function clock(t:number){
   const dt=Math.min(.05,Math.max(0,(t-lastFrame)/1000));lastFrame=t;
   if(!player)return;
   elapsed+=dt;simCarry+=dt;hudCarry+=dt;
+  for(const mixer of wolfMixers.values())mixer.update(dt);
   // Preview movement applies to the original Sim entity and heightfield. Not the
   // original final movement/physics API, which remains to be integrated.
   let ix=MOVE.x,iy=-MOVE.y;
@@ -344,6 +407,8 @@ async function initialize(){
     const centerX=start.x+50,centerZ=start.z-10;
     loadText.textContent='Generating original terrain and settlements at '+Math.round(start.x)+','+Math.round(start.z)+'…';
     await new Promise(resolve=>setTimeout(resolve,30));
+    loadText.textContent='Loading verified KayKit town buildings and Quaternius wolf…';
+    await loadApprovedModels();
     generateGround(centerX,centerZ);
     renderRoads(centerX,centerZ);
     const buildings=renderBuildings(centerX,centerZ);
@@ -352,7 +417,7 @@ async function initialize(){
     status.textContent='Eastbrook region · '+buildings+' original building coordinates';
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
-      yaw,pitch,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},right:cameraBasis(yaw).right,
+      yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},right:cameraBasis(yaw).right,
       forward:cameraBasis(yaw).forward
     }),configurable:false});
     loader.style.display='none';
