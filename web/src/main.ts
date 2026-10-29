@@ -25,6 +25,8 @@ const hpbar = document.getElementById('hpbar') as HTMLElement;
 const nub = document.getElementById('nub') as HTMLDivElement;
 const joystick = document.getElementById('stick') as HTMLDivElement;
 const hint = document.getElementById('hint') as HTMLDivElement;
+const fullscreenButton=document.getElementById('fullscreen');
+fullscreenButton?.addEventListener('click',async()=>{try{await document.documentElement.requestFullscreen?.();await (screen.orientation as any)?.lock?.('landscape').catch(()=>{});}catch(e){console.warn('Fullscreen requires a browser gesture:',e);}});
 const keys = new Set<string>();
 const MOVE = { x:0, y:0 };
 const uiScale = 1;
@@ -67,7 +69,7 @@ const otherMobMat=material(0xa15d83);
 const buildingMat=material(0x9eaa9a);
 const roofMat=material(0x70485a);
 const markerMat=material(0x37e5a8);
-const playerMesh=createHighflyFigure('hunter');
+const playerMesh=createHighflyFigure('hunter'); // Temporary K2 actor; rigged Hunter comes next.
 scene.add(playerMesh);
 
 const height=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
@@ -77,7 +79,9 @@ async function loadApprovedModels(){
   const candidates:Record<string,string>={
     house:'building_home_A_blue',homeB:'building_home_B_blue',tavern:'building_tavern_blue',
     church:'building_church_blue',blacksmith:'building_blacksmith_blue',
-    market:'building_market_blue',barracks:'building_barracks_blue',well:'building_well_blue'
+    market:'building_market_blue',barracks:'building_barracks_blue',well:'building_well_blue',
+    castle:'building_castle_blue',fortressTower:'building_tower_A_blue',fortressWall:'wall_straight',fortressGate:'wall_straight_gate',
+    treeA:'tree_single_A',treeB:'tree_single_B',rockA:'rock_single_A',docks:'building_docks_blue',shipyard:'building_shipyard_blue'
   };
   const results=await Promise.all(Object.entries(candidates).map(async ([key,file])=>{
     const gltf=await approvedLoader.loadAsync(approvedUrl('assets/kaykit/'+file+'.gltf'));
@@ -451,7 +455,7 @@ async function initialize(){
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
       yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),church:buildingVisuals.has('church'),blacksmith:buildingVisuals.has('blacksmith'),market:buildingVisuals.has('market'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
-      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
+      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
     }),configurable:false});
     loader.style.display='none';
     lastFrame=performance.now();

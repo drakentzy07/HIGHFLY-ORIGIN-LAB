@@ -7,9 +7,10 @@ import { terrainHeight, roadDistance, waterLevelAt, WATER_LEVEL } from '../../..
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 import { buildEastbrookHarbor } from '../../../upstream/src/render/eastbrook_harbor.ts';
 import { EASTBROOK_LAYOUT } from '../../../upstream/src/sim/eastbrook_layout.ts';
+import { buildHighflyFirstCity } from './highfly_city.ts';
 import { generateDecorationsInBounds } from '../../../upstream/src/sim/world.ts';
 
-const SIZE=64, RADIUS=2, SAMPLES=16;
+const SIZE=64, RADIUS=2, SAMPLES=32; // K2 smoother same original heightfield; native renderer still pending.
 const landMat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
 const roadMat=new THREE.MeshLambertMaterial({color:0xb39b76,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
 const waterMat=new THREE.MeshStandardMaterial({color:0x3989a4,roughness:.55,metalness:.05,transparent:true,opacity:.72,depthWrite:false,side:THREE.DoubleSide});
@@ -91,25 +92,23 @@ function buildings(ix:number,iz:number,group:THREE.Group,templates:Map<string,TH
   for(const s of (BUILTIN_WORLD.props?.stalls||[]) as any[]){const p=pos(s);if(!p||!inChunk(p.x,p.z,ix,iz))continue;const y=elev(p.x,p.z);box(group,3,1.05,2,woodMat,p.x,y,p.z);box(group,3.9,.22,2.8,stallMat,p.x,y+2.9,p.z);}
   return approved;
 }
-function trees(ix:number,iz:number,group:THREE.Group){
-  // Original ClaudeCraft foliage locations: no new random world geography.
+function trees(ix:number,iz:number,group:THREE.Group,templates:Map<string,THREE.Group>){
+  // Preserve the original source's deterministic world decoration coordinates.
   const xs=ix*SIZE,zs=iz*SIZE;
   const all=generateDecorationsInBounds(WORLD_SEED,{minX:xs,maxX:xs+SIZE-.01,minZ:zs,maxZ:zs+SIZE-.01});
-  const tree=all.filter(v=>v.kind==='tree'||v.kind==='tree2');
-  const rocks=all.filter(v=>v.kind==='rock');
-  const o=new THREE.Object3D();
-  if(tree.length){
-    const trunks=new THREE.InstancedMesh(trunkGeo,woodMat,tree.length),tops=new THREE.InstancedMesh(treeGeo,treeMat,tree.length);
-    tree.forEach((p,i)=>{const y=elev(p.x,p.z),s=Math.max(.65,p.scale);
-      o.scale.setScalar(s);o.position.set(p.x,y+s,p.z);o.updateMatrix();trunks.setMatrixAt(i,o.matrix);
-      o.position.y=y+3.35*s;o.updateMatrix();tops.setMatrixAt(i,o.matrix);});
-    trunks.instanceMatrix.needsUpdate=true;tops.instanceMatrix.needsUpdate=true;group.add(trunks,tops);
+  const box=new THREE.Box3(),size=new THREE.Vector3();
+  let placed=0;
+  for(const p of all){const key=p.kind==='rock'?'rockA':p.kind==='tree2'?'treeB':p.kind==='tree'?'treeA':null;
+    if(!key)continue;const source=templates.get(key);if(!source)continue;
+    const item=source.clone(true);box.setFromObject(item);box.getSize(size);
+    const target=p.kind==='rock'?1.4:5.5*Math.max(.65,p.scale);
+    const s=target/Math.max(.01,size.y);
+    item.scale.setScalar(s);item.rotation.y=p.variant*1.91;
+    item.position.set(p.x,elev(p.x,p.z)-box.min.y*s,p.z);
+    item.userData.highflyApprovedCC0=true;item.userData.highflyK2Nature=true;
+    group.add(item);placed++;
   }
-  if(rocks.length){
-    const instances=new THREE.InstancedMesh(rockGeo,rockMat,rocks.length);
-    rocks.forEach((p,i)=>{const s=.45+Math.max(.3,p.scale)*.6;o.scale.set(s,s*.55,s);o.position.set(p.x,elev(p.x,p.z)+s*.18,p.z);o.rotation.y=p.variant; o.updateMatrix();instances.setMatrixAt(i,o.matrix);});
-    instances.instanceMatrix.needsUpdate=true;group.add(instances);
-  }
+  group.userData.highflyNatureCount=placed;
 }
 function eastbrookDressing(scene:THREE.Scene,templates:Map<string,THREE.Group>){
   // Authoritative Eastbrook layout; the visual dressing is HIGHFLY authored.
@@ -156,14 +155,15 @@ function eastbrookDressing(scene:THREE.Scene,templates:Map<string,THREE.Group>){
 function dispose(group:THREE.Group){group.traverse((obj:any)=>{if(obj.userData?.disposable&&obj.geometry)obj.geometry.dispose();});group.parent?.remove(group);}
 export class WorldStreamer{
   private chunks=new Map<string,THREE.Group>();private center={ix:NaN,iz:NaN};
-  public approvedVisible=0;public zones=ZONES.length;public lastZone='';
+  public approvedVisible=0;public zones=ZONES.length;public lastZone='';public city:Record<string,number>={};
   constructor(private scene:THREE.Scene,private templates:Map<string,THREE.Group>){
     const harbor=buildEastbrookHarbor(WORLD_SEED);harbor.name='claudecraft-original-eastbrook-harbor';scene.add(harbor);
     eastbrookDressing(scene,templates);
+    const city=buildHighflyFirstCity(templates);scene.add(city.root);this.city=city.counts;
   }
   private load(ix:number,iz:number){const key=ix+','+iz;if(this.chunks.has(key))return;
     const group=new THREE.Group();group.name='world-sector-'+key;
-    terrain(ix,iz,group);water(ix,iz,group);roads(ix,iz,group);buildings(ix,iz,group,this.templates);trees(ix,iz,group);
+    terrain(ix,iz,group);water(ix,iz,group);roads(ix,iz,group);buildings(ix,iz,group,this.templates);trees(ix,iz,group,this.templates);
     this.scene.add(group);this.chunks.set(key,group);
   }
   update(x:number,z:number,prime=false){const ix=Math.floor(x/SIZE),iz=Math.floor(z/SIZE);this.center={ix,iz};

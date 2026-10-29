@@ -1,4 +1,4 @@
-// HIGHFLY C0-K1 — stage ONLY the 18 audited CC0 assets in the signed allowlist.
+// HIGHFLY C0-K2 — stage ONLY the 36 audited CC0 assets in the signed allowlist.
 // Original KayKit and ClaudeCraft source remains in ephemeral Actions checkout.
 // No pack ZIP, source geometry collection, or other media enters the HIGHFLY repo.
 import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
@@ -7,11 +7,12 @@ import { join, dirname } from 'node:path';
 
 const root='highfly';
 const allow=JSON.parse(await readFile(join(root,'config/c0_approved_assets.json'),'utf8'));
-if(allow.schemaVersion!==1||allow.assets.length!==18)
-  throw Error('Unexpected candidate set; exactly eighteen verified files required');
-const sourcePrefix='kaykit/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/';
+if(allow.schemaVersion!==1||allow.assets.length!==36)
+  throw Error('Unexpected candidate set; exactly thirty-six verified files required');
+const sourcePrefix='kaykit/addons/kaykit_medieval_hexagon_pack/Assets/gltf/';
+const modelOrigins={"building_castle_blue":"buildings/blue/building_castle_blue","building_tower_A_blue":"buildings/blue/building_tower_A_blue","building_docks_blue":"buildings/blue/building_docks_blue","building_shipyard_blue":"buildings/blue/building_shipyard_blue","wall_straight":"buildings/neutral/wall_straight","wall_straight_gate":"buildings/neutral/wall_straight_gate","tree_single_A":"decoration/nature/tree_single_A","tree_single_B":"decoration/nature/tree_single_B","rock_single_A":"decoration/nature/rock_single_A"};
 const source=(outpath)=>{
-  if(outpath.startsWith('assets/kaykit/'))return sourcePrefix+outpath.slice('assets/kaykit/'.length);
+  if(outpath.startsWith('assets/kaykit/')) { const file=outpath.slice('assets/kaykit/'.length);const base=file.replace(/\.(gltf|bin)$/,'');return sourcePrefix+(modelOrigins[base]||('buildings/blue/'+file.replace(/\.[^.]+$/,'')))+(modelOrigins[base]?'.'+file.split('.').pop():'.'+file.split('.').pop()); }
   if(outpath==='assets/quaternius/wolf.glb')return 'upstream/public/models/creatures/wolf.glb';
   throw Error('Not in pinned source map: '+outpath);
 };
@@ -54,4 +55,4 @@ await writeFile(join(root,'reports/c0/web/approved-media.json'),JSON.stringify({
   origin:'pinned KayKit official CC0 and ClaudeCraft v0.44.7 credited Quaternius wolf',
   files,playerAssetImported:false
 },null,2)+'\n');
-console.log('C0-K1 approved CC0 media staged:',JSON.stringify(files));
+console.log('C0-K2 approved CC0 media staged:',JSON.stringify(files));

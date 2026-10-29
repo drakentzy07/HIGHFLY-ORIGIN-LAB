@@ -62,6 +62,8 @@ try {
     throw Error('C0-J world did not stream the original 15-zone map: '+JSON.stringify(initial.streaming));
   if(!initial.actorVisible||initial.landmarkCount<7)
     throw Error('K1 original Hunter visual or navigation markers missing: '+JSON.stringify(initial));
+  if(!(initial.city?.wallSegments>=40&&initial.city?.towers===4&&initial.city?.gates===2&&initial.city?.trees>=10))
+    throw Error('K2 city overlay did not construct the approved fortress: '+JSON.stringify(initial.city));
   if(!initial.approvedModelsLoaded?.church||!initial.approvedModelsLoaded?.blacksmith||
      !initial.approvedModelsLoaded?.market)
     throw Error('K1 town building types failed to load');
