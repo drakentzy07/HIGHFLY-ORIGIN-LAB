@@ -338,6 +338,8 @@ async function initialize(){
     if(!player)throw Error('No original player entity created');
     const start=posOf(PLAYER_START);
     if(!start)throw Error('Original PLAYER_START missing');
+    const townHub=posOf(ZONES[0]?.hub);
+    if(townHub) yaw=Math.atan2(townHub.x-start.x,townHub.z-start.z);
     const centerX=start.x+50,centerZ=start.z-10;
     loadText.textContent='Generating original terrain and settlements at '+Math.round(start.x)+','+Math.round(start.z)+'…';
     await new Promise(resolve=>setTimeout(resolve,30));
