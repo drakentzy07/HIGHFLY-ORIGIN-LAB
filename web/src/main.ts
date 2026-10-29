@@ -136,6 +136,10 @@ async function loadApprovedModels(){
   buildingVisuals.set('rockNature',rock.scene);
   buildingVisuals.set('bushNature',bush.scene);
   buildingVisuals.set('fernNature',fern.scene);
+  const [blue,green,red]=await Promise.all([
+    fromOriginal('ships/hex_ship_blue.glb'),fromOriginal('ships/hex_ship_green.glb'),fromOriginal('ships/hex_ship_red.glb')
+  ]);
+  buildingVisuals.set('shipBlue',blue.scene);buildingVisuals.set('shipGreen',green.scene);buildingVisuals.set('shipRed',red.scene);
   if(!playerMesh.children.length||!npcClips.length||!knight.animations.length)throw Error('K3: original KayKit characters or skeletal animation clips missing');
 }
 

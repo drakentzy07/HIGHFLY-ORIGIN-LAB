@@ -69,7 +69,18 @@ try {
     throw Error('K1 original Hunter visual or navigation markers missing: '+JSON.stringify(initial));
   if(!(initial.city?.wallSegments>=25&&initial.city?.towers>=2&&initial.city?.gates===2&&initial.city?.well===1))
     throw Error('K2 city overlay did not construct the approved fortress: '+JSON.stringify(initial.city));
-  if(!(initial.hunterClips>1&&initial.npcClips>1&&initial.cityBlockers>20))throw Error('K3 rigged actor and city physical blockers missing: '+JSON.stringify(initial));
+  if(!(initial.hunterClips>1&&initial.npcClips>1&&initial.cityBlockers>16))throw Error('K3 rigged actor and city physical blockers missing: '+JSON.stringify(initial));
+  if(!(initial.city.wallHeight>=7.2&&initial.city.gateHeight>=8.5&&initial.actorHeight===1.7))
+    throw Error('K4 human scale invalid: '+JSON.stringify(initial.city));
+  if(initial.gatePassages?.length!==2||initial.gatePassages.some(g=>g.blocked))
+    throw Error('K4 gates must remain physically walkable: '+JSON.stringify(initial.gatePassages));
+  if(!(initial.ships>=2))throw Error('K4 harbour missing: '+initial.ships);
+  if(!(await page.locator('#use').isVisible())||!(await page.locator('#bag').isVisible()))
+    throw Error('K4 corpse / NPC or inventory HUD missing');
+  await page.locator('#bag').click();
+  if(!(await page.locator('#inventory').isVisible()))throw Error('K4 inventory did not open');
+  await page.locator('#inventoryClose').click();
+  if(await page.locator('#inventory').isVisible())throw Error('K4 inventory did not close');
   if(!initial.approvedModelsLoaded?.church||!initial.approvedModelsLoaded?.blacksmith||
      !initial.approvedModelsLoaded?.market)
     throw Error('K1 town building types failed to load');

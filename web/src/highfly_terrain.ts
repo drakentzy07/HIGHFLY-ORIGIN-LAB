@@ -37,8 +37,8 @@ export async function loadWorldTerrainMaterial(){
         vec3 base=mix(g,e,clamp(textureVariation,0.0,.48));
         base=mix(base,r,cliff);
         base=mix(base,mix(e,p,.40),path*.94);
-        float lit=.72+.28*clamp(dot(normalize(vNormalWorld),normalize(vec3(-.5,1.0,.3))),0.0,1.0);
-        gl_FragColor=vec4(base*mix(vec3(1.0),vTint,.12)*lit,1.0);
+        float lit=.94+.22*clamp(dot(normalize(vNormalWorld),normalize(vec3(-.5,1.0,.3))),0.0,1.0);
+        gl_FragColor=vec4(base*mix(vec3(1.0),vTint,.09)*lit,1.0);
       }
     `,
     vertexColors:true,side:THREE.DoubleSide,lights:false
