@@ -16,6 +16,13 @@ const landMat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.Double
 const roadMat=new THREE.MeshLambertMaterial({color:0xb39b76,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1});
 const waterMat=new THREE.MeshStandardMaterial({color:0x3989a4,roughness:.55,metalness:.05,transparent:true,opacity:.72,depthWrite:false,side:THREE.DoubleSide});
 const tempBox=new THREE.Box3(),tempSize=new THREE.Vector3();
+// K5: geometry-matched colliders for visible approved houses.
+function outline(x:number,z:number,hw:number,hd:number,yaw:number):CityWall[]{
+ const c=Math.cos(yaw),sin=Math.sin(yaw);
+ const point=(u:number,v:number)=>({x:x+u*c+v*sin,z:z-u*sin+v*c});
+ const corners=[point(-hw,-hd),point(hw,-hd),point(hw,hd),point(-hw,hd)];
+ return corners.map((p,i)=>({x1:p.x,z1:p.z,x2:corners[(i+1)%4].x,z2:corners[(i+1)%4].z,kind:'visible-house',radius:.24}));
+}
 const pos=(b:any)=>{const p=b?.pos||b?.position||b?.center||b;return p&&Number.isFinite(Number(p.x))&&Number.isFinite(Number(p.z))?{x:Number(p.x),z:Number(p.z)}:null;};
 const elev=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
 const inChunk=(x:number,z:number,ix:number,iz:number)=>Math.floor(x/SIZE)===ix&&Math.floor(z/SIZE)===iz;
@@ -69,7 +76,7 @@ function roads(ix:number,iz:number,group:THREE.Group){const v:number[]=[],ind:nu
   if(ind.length){const m=new THREE.Mesh(geometry(v,ind),roadMat);m.userData.disposable=true;group.add(m);}
 }
 function buildings(ix:number,iz:number,group:THREE.Group,templates:Map<string,THREE.Group>){
-  let approved=0;
+  let approved=0;const visualBlockers:CityWall[]=[];
   for(const b of (BUILTIN_WORLD.props?.buildings||[]) as any[]){
     const p=pos(b);if(!p||!inChunk(p.x,p.z,ix,iz))continue;
     const w=Math.max(3,Math.min(30,Number(b.w??b.width??8))),d=Math.max(3,Math.min(30,Number(b.d??b.depth??9)));
@@ -87,8 +94,11 @@ function buildings(ix:number,iz:number,group:THREE.Group,templates:Map<string,TH
     mesh.position.set(p.x,elev(p.x,p.z)-tempBox.min.y*scale,p.z);
     mesh.rotation.y=Number(b.rot??b.rotation??0);
     mesh.userData.highflyApprovedCC0=true;group.add(mesh);approved++;
+    const hw=tempSize.x*scale*.5,hd=tempSize.z*scale*.5;
+    if(hw>0&&hd>0&&hw<30&&hd<30)visualBlockers.push(...outline(p.x,p.z,hw,hd,mesh.rotation.y));
   }
-  // K2's box stalls are removed. Only real licensed architecture is displayed.
+  // Stream collider lifecycle is tied to the corresponding approved 3D meshes.
+  group.userData.highflyVisibleHouseBlockers=visualBlockers;
   return approved;
 }
 function trees(ix:number,iz:number,group:THREE.Group,templates:Map<string,THREE.Group>){
@@ -117,11 +127,12 @@ export class WorldStreamer{
   private chunks=new Map<string,THREE.Group>();private center={ix:NaN,iz:NaN};
   public approvedVisible=0;public zones=ZONES.length;public lastZone='';public city:Record<string,number>={};
   private blockers:CityWall[]=[];public shipCount=0;private gatePassages:{x:number;z:number}[]=[];
+  public harborBerths:{x:number;z:number}[]=[];
   private fortress:THREE.Group|null=null;private raycaster=new THREE.Raycaster();
   constructor(private scene:THREE.Scene,private templates:Map<string,THREE.Group>,private terrainMaterial:THREE.Material){
     const harbor=buildEastbrookHarbor(WORLD_SEED);harbor.name='claudecraft-original-eastbrook-harbor';scene.add(harbor);
     const city=buildHighflyFirstCity(templates);scene.add(city.root);this.fortress=city.root;this.city=city.counts;this.blockers=city.blockers;this.gatePassages=city.passages;
-    const boats=buildHighflyShips(templates);scene.add(boats.root);this.shipCount=boats.ships;
+    const boats=buildHighflyShips(templates);scene.add(boats.root);this.shipCount=boats.ships;this.harborBerths=boats.berths;
   }
   private load(ix:number,iz:number){const key=ix+','+iz;if(this.chunks.has(key))return;
     const group=new THREE.Group();group.name='world-sector-'+key;
@@ -143,7 +154,18 @@ export class WorldStreamer{
     let n=0;for(const group of this.chunks.values())group.traverse((o:any)=>{if(o.userData?.highflyApprovedCC0)n++;});
     this.approvedVisible=n;
   }
-  solveMove(x:number,z:number,nx:number,nz:number){return resolveCityMove(x,z,nx,nz,this.blockers);}
+  usesNewCityCollision(x:number,z:number){return Math.hypot(x+34,z+101)<84;}
+  solveMove(x:number,z:number,nx:number,nz:number){
+    if(!this.usesNewCityCollision(x,z)&&!this.usesNewCityCollision(nx,nz))return {x:nx,z:nz};
+    const cx=Math.floor(nx/SIZE),cz=Math.floor(nz/SIZE);
+    const nearby:CityWall[]=[];
+    for(let ix=cx-1;ix<=cx+1;ix++)for(let iz=cz-1;iz<=cz+1;iz++){
+      const group=this.chunks.get(ix+','+iz);
+      if(group)nearby.push(...(group.userData.highflyVisibleHouseBlockers??[]));
+    }
+    // No invisible legacy footprints: collision comes from current visual walls/houses.
+    return resolveCityMove(x,z,nx,nz,[...this.blockers,...nearby]);
+  }
   getGateDiagnostics(){return this.gatePassages.map(p=>({position:p,blocked:blockedByCity(p.x,p.z,this.blockers)}));}
   avoidCamera(focus:THREE.Vector3,desired:THREE.Vector3){
     if(!this.fortress)return desired;
