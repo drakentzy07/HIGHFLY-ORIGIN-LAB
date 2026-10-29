@@ -9,9 +9,10 @@ import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
-import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/data.ts';
+import { BUILTIN_WORLD, PLAYER_START, ZONES, ITEMS, QUESTS } from '../../../upstream/src/sim/data.ts';
 import { terrainHeight, groundHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
 import { resolveMovement } from '../../../upstream/src/sim/colliders.ts';
+import { corpseCanInteract } from '../../../upstream/src/sim/corpse_interaction.ts';
 import { WorldStreamer } from './world_stream.ts';
 import { makeRig, type RigController } from './highfly_rigs.ts';
 import { loadWorldTerrainMaterial } from './highfly_terrain.ts';
@@ -39,6 +40,20 @@ let prevCameraX=0,prevCameraY=0;
 let lastFrame=performance.now(), elapsed=0, simCarry=0, hudCarry=0;
 let sim:any, player:any, playerId=0;
 let target:any=null;
+let announcementUntil=0,inventoryOpen=false;
+const useButton=document.getElementById('use') as HTMLButtonElement;
+const bagButton=document.getElementById('bag') as HTMLButtonElement;
+const panel=document.getElementById('inventory') as HTMLDivElement;
+const dialogue=document.getElementById('dialogue') as HTMLDivElement;
+const inventoryContents=document.getElementById('inventoryContents') as HTMLDivElement;
+function notify(message:string){status.textContent=message;announcementUntil=performance.now()+5000;}
+function inventorySlots(){return ((sim?.players?.get(playerId)?.inventory??[]) as any[]).filter(s=>s&&s.itemId&&Number(s.count??1)>0);}
+function renderInventory(){const slots=inventorySlots();inventoryContents.replaceChildren();
+  for(const slot of slots){const d=document.createElement('div');d.className='slot';const name=ITEMS[slot.itemId]?.name||slot.itemId;
+    d.textContent=name+'  ×'+Math.max(1,Number(slot.count)||1);inventoryContents.append(d);}
+  if(!slots.length){const empty=document.createElement('div');empty.textContent='Mochila vacía';inventoryContents.append(empty);}
+}
+function setBag(visible:boolean){inventoryOpen=visible;panel.hidden=!visible;if(visible)renderInventory();}
 let worldStreamer:WorldStreamer|null=null;
 const approvedLoader=new GLTFLoader();
 approvedLoader.setMeshoptDecoder(MeshoptDecoder);
@@ -112,7 +127,7 @@ async function loadApprovedModels(){
     fromOriginal('foliage/bush.glb'),fromOriginal('foliage/fern.glb'),
     fromOriginal('chars/wild_boar.glb')
   ]);
-  hunterRig=makeRig(knight.scene,knight.animations,2.6);playerMesh.add(hunterRig.root);
+  hunterRig=makeRig(knight.scene,knight.animations,1.70);playerMesh.add(hunterRig.root);
   npcVisual=ranger.scene;npcClips=ranger.animations;
   skeletonVisual=skeleton.scene;skeletonClips=skeleton.animations;
   boarVisual=boar.scene;boarClips=boar.animations;
@@ -147,7 +162,7 @@ function makeEntity(e:any){
   else if(/skeleton|bone|undead/i.test(key)&&skeletonVisual){model=skeletonVisual;clips=skeletonClips;}
   // Never fabricate a box/icosahedron for an unavailable enemy.
   if(model){
-    const targetHeight=e.kind==='npc'?2.45:/wolf|hound|boar/i.test(key)?1.6:2.45;
+    const targetHeight=e.kind==='npc'?1.70:/wolf|hound|boar/i.test(key)?1.25:1.85;
     const rig=makeRig(model,clips,targetHeight);
     group.add(rig.root);entityRigs.set(e.id,rig);
     group.userData.approvedWolf=/wolf|hound/i.test(key);
@@ -160,13 +175,17 @@ function updateEntities(){
   let shown=0;
   for(const e of sim.entities.values()){
     if(e.id===playerId||!e.pos||e.kind!=='mob'&&e.kind!=='npc')continue;
-    if((e.hp??1)<=0||dist2(e.pos,player.pos)>max*max)continue;
+    if((e.hp??1)<=0&&!corpseCanInteract(e))continue;
+    if(dist2(e.pos,player.pos)>max*max)continue;
     if(shown++>90)break;
     seen.add(e.id);
     let group=entityMeshes.get(e.id);
     if(!group){group=makeEntity(e);entityMeshes.set(e.id,group);}
     group.position.set(e.pos.x,e.pos.y,e.pos.z);
     group.rotation.y=e.facing||0;
+    const isCorpse=e.kind==='mob'&&!!e.dead;
+    group.userData.corpse=isCorpse;
+    entityRigs.get(e.id)?.setDead(isCorpse);
     entityRigs.get(e.id)?.update(.15,false);
   }
   for(const [id,group] of entityMeshes)
@@ -223,6 +242,37 @@ function dash(){dashLeft=.24;}
 document.getElementById('jump')!.addEventListener('pointerdown',e=>{e.preventDefault();jump();});
 document.getElementById('dash')!.addEventListener('pointerdown',e=>{e.preventDefault();dash();});
 document.getElementById('atk')!.addEventListener('pointerdown',e=>{e.preventDefault();attack();});
+useButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();interactNearby();});
+bagButton.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();setBag(!inventoryOpen);});
+document.getElementById('inventoryClose')!.addEventListener('click',()=>setBag(false));
+document.getElementById('dialogueClose')!.addEventListener('click',()=>{dialogue.hidden=true;});
+function interactNearby(){
+  if(!sim||!player)return;
+  let nearest:any=null,best=5*5;
+  for(const e of sim.entities.values()){
+    if(!e.pos||dist2(e.pos,player.pos)>=best)continue;
+    if(e.kind==='npc'||(e.kind==='mob'&&corpseCanInteract(e))){
+      nearest=e;best=dist2(e.pos,player.pos);
+    }
+  }
+  if(!nearest){notify('No hay NPC ni cadáveres saqueables cerca.');return;}
+  try{
+    if(nearest.kind==='mob'){
+      const before=JSON.stringify(inventorySlots());
+      const got=sim.lootCorpse(nearest.id,playerId);
+      const changed=before!==JSON.stringify(inventorySlots());
+      if(inventoryOpen)renderInventory();
+      notify(got&&changed?'Saqueo obtenido. Objetos añadidos a la mochila.':got?'Saqueo recogido.':'No hay botín disponible, falta espacio o no tenés derecho a saquear.');
+    }else{
+      sim.talkToNpc(nearest.id,playerId);
+      const quests=((nearest.questIds??[]) as string[]).map(id=>QUESTS[id]?.name??id);
+      dialogue.querySelector('.npc-name')!.textContent=String(nearest.name||'Habitante');
+      dialogue.querySelector('.npc-text')!.textContent=quests.length?'Misiones disponibles: '+quests.join(' · '):'Interacción original de ClaudeCraft ejecutada. Este NPC no ofrece misiones en este momento.';
+      dialogue.hidden=false;
+      notify('Conversaste con '+nearest.name+'.');
+    }
+  }catch(err){notify('Interacción original: '+String(err).slice(0,145));}
+}
 function attack(){
   let closest:any=null,best=20*20;
   for(const e of sim.entities.values()){
@@ -279,10 +329,11 @@ function clock(t:number){
   const y=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
   playerMesh.position.set(player.pos.x,Number.isFinite(y)?y+jumpOffset:player.pos.y+jumpOffset,player.pos.z);
   playerMesh.rotation.y=player.facing||0;
-  const focus=new THREE.Vector3(player.pos.x,playerMesh.position.y+1.6,player.pos.z);
-  const distance=12;
+  const focus=new THREE.Vector3(player.pos.x,playerMesh.position.y+1.28,player.pos.z);
+  const distance=11;
   const position=orbitCameraPosition(focus,yaw,pitch,distance);
-  const desired=new THREE.Vector3(position.x,position.y,position.z);
+  let desired=new THREE.Vector3(position.x,position.y,position.z);
+  desired=worldStreamer?.avoidCamera(focus,desired)??desired;
   // Keep the following camera slightly above the terrain, including on slopes.
   desired.y=Math.max(desired.y,height(desired.x,desired.z)+0.8);
   camera.position.lerp(desired,Math.min(1,dt*10));
@@ -298,8 +349,11 @@ function clock(t:number){
     stats.textContent='Nivel '+(player.level||1)+' · '+Math.round(player.pos.x)+', '+Math.round(player.pos.z)+'\n'+npcCount+' NPC · '+realWolvesShown+' lobos · '+entityMeshes.size+' entidades';
     stats.style.whiteSpace='pre-line';
     hpbar.style.width=hp+'%';
-    if(!target)status.textContent='Zone: '+(zone?.name||'Outside zone')+' · Real Sim tick running';
-    else status.textContent='Target: '+target.name+' · HP '+Math.max(0,Math.round(target.hp))+'/'+Math.round(target.maxHp||1);
+    if(performance.now()>announcementUntil){
+      if(!target)status.textContent='Zona: '+(zone?.name||'Exterior')+' · Simulación original activa';
+      else status.textContent='Objetivo: '+target.name+' · HP '+Math.max(0,Math.round(target.hp))+'/'+Math.round(target.maxHp||1);
+    }
+    if(inventoryOpen)renderInventory();
     if(elapsed>9)hint.style.display='none';
   }
   renderer.render(scene,camera);
@@ -327,7 +381,7 @@ async function initialize(){
     realBuildingsShown=worldStreamer.approvedVisible;
     const buildings=realBuildingsShown;
     updateEntities();
-    status.textContent='K3 · '+buildings+' construcciones CC0 visibles';
+    status.textContent='K4 · '+buildings+' recursos CC0, '+worldStreamer.shipCount+' barcos en puerto';
     const zonesSelect=document.getElementById('zoneJump') as HTMLSelectElement|null;
     if(zonesSelect){for(let i=0;i<ZONES.length;i++){const opt=document.createElement('option');opt.value=String(i);opt.textContent=(i+1)+'. '+ZONES[i].name;zonesSelect.appendChild(opt);}
       zonesSelect.addEventListener('change',()=>{const zone=ZONES[Number(zonesSelect.value)];if(!zone)return;
@@ -358,7 +412,9 @@ async function initialize(){
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
       yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),church:buildingVisuals.has('church'),blacksmith:buildingVisuals.has('blacksmith'),market:buildingVisuals.has('market'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
-      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,cityBlockers:worldStreamer?.blockerCount,hunterClips:hunterRig?.clipCount,npcClips:npcClips.length,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
+      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,ships:worldStreamer?.shipCount,gatePassages:worldStreamer?.getGateDiagnostics(),
+      inventorySlots:inventorySlots().length,nearbyCorpses:[...sim.entities.values()].filter((e:any)=>corpseCanInteract(e)&&dist2(e.pos,player.pos)<25).length,
+      actorHeight:worldStreamer?.city?.actorHeight,cityBlockers:worldStreamer?.blockerCount,hunterClips:hunterRig?.clipCount,npcClips:npcClips.length,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
     }),configurable:false});
     loader.style.display='none';
     lastFrame=performance.now();
