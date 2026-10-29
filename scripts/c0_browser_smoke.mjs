@@ -32,7 +32,7 @@ try {
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded',timeout:35000});
   try{
     await page.waitForFunction(
-      "() => document.querySelector('#loading')?.style.display === 'none'",
+      () => document.querySelector('#loading')?.style.display === 'none',
       null,{timeout:90000}
     );
   }catch(e){
@@ -42,7 +42,7 @@ try {
   // K2 can stream many original-heightfield sectors plus CC0 fortress models.
   // The loader disappearing is not enough: wait for the first SIM/HUD frame.
   await page.waitForFunction(
-    "() => /Nivel|Level/.test(document.querySelector('#stats')?.textContent || '')",
+    () => /Nivel|Level/.test(document.querySelector('#stats')?.textContent || ''),
     null,{timeout:60000}
   );
   const stats=await page.locator('#stats').innerText();
