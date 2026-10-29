@@ -1,0 +1,60 @@
+name: C0-B world and mob dependency graph
+
+on:
+  push:
+    branches:
+      - c0-audit-claudecraft-v0447
+    paths:
+      - "scripts/c0_dependency_graph.mjs"
+      - "tests/c0_dependency_graph.test.mjs"
+      - ".github/workflows/c0-dependency-map.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-graph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout HIGHFLY audit scripts
+        uses: actions/checkout@v4
+        with:
+          path: highfly
+          persist-credentials: false
+      - name: Shallow sparse checkout of official upstream source code (no media)
+        uses: actions/checkout@v4
+        with:
+          repository: levy-street/world-of-claudecraft
+          ref: 493c35a108cef6c8aa290e8793107b1cd117886e
+          path: upstream
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            src/sim
+            src/editor
+            src/game
+            src/render
+            src/world_api
+            src/net
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Prepare Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test dependency scanner
+        working-directory: highfly
+        run: node --test tests/c0_dependency_graph.test.mjs
+      - name: Analyze world, mobs, editor and client imports
+        working-directory: highfly
+        run: node scripts/c0_dependency_graph.mjs ../upstream
+      - name: Upload analysis only (never upstream files)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: highfly-c0-dependency-graph
+          path: highfly/reports/c0/graphs/
+          if-no-files-found: warn
+          retention-days: 14
