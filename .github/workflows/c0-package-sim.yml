@@ -1,0 +1,48 @@
+name: C0-E stage original MIT simulation source only
+
+on:
+  push:
+    branches: [c0-audit-claudecraft-v0447]
+    paths:
+      - "scripts/c0_package_sim.mjs"
+      - ".github/workflows/c0-package-sim.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout HIGHFLY audit script
+        uses: actions/checkout@v4
+        with:
+          path: highfly
+          persist-credentials: false
+      - name: Checkout original simulation code only
+        uses: actions/checkout@v4
+        with:
+          repository: levy-street/world-of-claudecraft
+          ref: 493c35a108cef6c8aa290e8793107b1cd117886e
+          path: upstream
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            src/sim
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Stage exact source files and original MIT notice
+        run: node highfly/scripts/c0_package_sim.mjs
+      - name: Publish source-only audit package, not a game build
+        uses: actions/upload-artifact@v4
+        with:
+          name: highfly-c0-sim-source-only
+          path: highfly/reports/c0/sim-source/
+          retention-days: 14
+          if-no-files-found: error
