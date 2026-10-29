@@ -7,7 +7,8 @@ import { terrainHeight, roadDistance, waterLevelAt, WATER_LEVEL } from '../../..
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 import { buildEastbrookHarbor } from '../../../upstream/src/render/eastbrook_harbor.ts';
 import { EASTBROOK_LAYOUT } from '../../../upstream/src/sim/eastbrook_layout.ts';
-import { buildHighflyFirstCity, resolveCityMove, type CityWall } from './highfly_city.ts';
+import { buildHighflyFirstCity, resolveCityMove, blockedByCity, type CityWall } from './highfly_city.ts';
+import { buildHighflyShips } from './highfly_harbor.ts';
 import { generateDecorationsInBounds } from '../../../upstream/src/sim/world.ts';
 
 const SIZE=64, RADIUS=2, SAMPLES=32; // Original WORLD_SEED and original height sampler.
@@ -77,7 +78,11 @@ function buildings(ix:number,iz:number,group:THREE.Group,templates:Map<string,TH
     const template=templates.get(selected)||templates.get('house');if(!template)continue;
     const mesh=template.clone(true);tempBox.setFromObject(mesh);tempBox.getSize(tempSize);
     // Uniform scale preserves the original artist's proportions. Avoid stretched hex buildings.
-    const scale=Math.min(w/Math.max(.01,tempSize.x),d/Math.max(.01,tempSize.z));
+    const authentic=EASTBROOK_LAYOUT.buildings.find((e:any)=>e.id===id);
+    // HIGHFLY human-scale rules: 1.70m avatar, 2.10m minimum doorway.
+    // The original height metadata informs the category but not the final scale.
+    const targetHeight=/chapel/.test(id)?9.0:/bank/.test(id)?10.0:/inn|market/.test(id)?8.0:/smithy|workshop|toolworks/.test(id)?7.0:/home|quayside/.test(id)?6.2:Math.max(6.4,Math.min(9.5,Number((authentic as any)?.nativeDimensions?.height??8)));
+    const scale=targetHeight/Math.max(.01,tempSize.y);
     mesh.scale.setScalar(Math.max(.01,scale));
     mesh.position.set(p.x,elev(p.x,p.z)-tempBox.min.y*scale,p.z);
     mesh.rotation.y=Number(b.rot??b.rotation??0);
@@ -111,10 +116,12 @@ function dispose(group:THREE.Group){group.traverse((obj:any)=>{if(obj.userData?.
 export class WorldStreamer{
   private chunks=new Map<string,THREE.Group>();private center={ix:NaN,iz:NaN};
   public approvedVisible=0;public zones=ZONES.length;public lastZone='';public city:Record<string,number>={};
-  private blockers:CityWall[]=[];
+  private blockers:CityWall[]=[];public shipCount=0;private gatePassages:{x:number;z:number}[]=[];
+  private fortress:THREE.Group|null=null;private raycaster=new THREE.Raycaster();
   constructor(private scene:THREE.Scene,private templates:Map<string,THREE.Group>,private terrainMaterial:THREE.Material){
     const harbor=buildEastbrookHarbor(WORLD_SEED);harbor.name='claudecraft-original-eastbrook-harbor';scene.add(harbor);
-    const city=buildHighflyFirstCity(templates);scene.add(city.root);this.city=city.counts;this.blockers=city.blockers;
+    const city=buildHighflyFirstCity(templates);scene.add(city.root);this.fortress=city.root;this.city=city.counts;this.blockers=city.blockers;this.gatePassages=city.passages;
+    const boats=buildHighflyShips(templates);scene.add(boats.root);this.shipCount=boats.ships;
   }
   private load(ix:number,iz:number){const key=ix+','+iz;if(this.chunks.has(key))return;
     const group=new THREE.Group();group.name='world-sector-'+key;
@@ -137,6 +144,15 @@ export class WorldStreamer{
     this.approvedVisible=n;
   }
   solveMove(x:number,z:number,nx:number,nz:number){return resolveCityMove(x,z,nx,nz,this.blockers);}
+  getGateDiagnostics(){return this.gatePassages.map(p=>({position:p,blocked:blockedByCity(p.x,p.z,this.blockers)}));}
+  avoidCamera(focus:THREE.Vector3,desired:THREE.Vector3){
+    if(!this.fortress)return desired;
+    const ray=desired.clone().sub(focus),length=ray.length();
+    if(length<.01)return desired;
+    this.raycaster.set(focus,ray.normalize());this.raycaster.far=length;
+    const hit=this.raycaster.intersectObjects(this.fortress.children,true)[0];
+    return hit?focus.clone().addScaledVector(ray,Math.max(1.2,hit.distance-.7)):desired;
+  }
   get blockerCount(){return this.blockers.length;}
   get chunkCount(){return this.chunks.size;}
   get sector(){return this.center.ix+','+this.center.iz;}

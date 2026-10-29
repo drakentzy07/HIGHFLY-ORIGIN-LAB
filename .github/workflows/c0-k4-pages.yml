@@ -1,0 +1,111 @@
+name: C0-K4 HIGHFLY original map CC0 fortress vegetation preview
+
+on:
+  push:
+    branches: [c0-k4-city-rpg-scale]
+    paths:
+      - "web/**"
+      - "docs/C0_K4_CITY_RPG_SCALE.md"
+      - "scripts/c0_build_web.mjs"
+      - "scripts/c0_browser_smoke.mjs"
+      - "tests/c0_controls.test.mjs"
+      - "scripts/c0_stage_cc0_media.mjs"
+      - "scripts/c0_release_gate.mjs"
+      - "config/c0_approved_assets.json"
+      - ".github/workflows/c0-pages-prototype.yml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: highfly-origin-c0-k4-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Validate and package C0-K4
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout HIGHFLY only
+        uses: actions/checkout@v4
+        with:
+          path: highfly
+          persist-credentials: false
+      - name: Checkout upstream only as temporary source code, pinned
+        uses: actions/checkout@v4
+        with:
+          repository: levy-street/world-of-claudecraft
+          ref: 493c35a108cef6c8aa290e8793107b1cd117886e
+          path: upstream
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            src
+            CREDITS.md
+            public/models/creatures
+            public/models/chars/players
+            public/models/chars/enemies
+            public/models/foliage
+            public/models/biome
+            public/textures/terrain
+            public/basis
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Checkout pinned official KayKit CC0 buildings
+        uses: actions/checkout@v4
+        with:
+          repository: KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0
+          ref: 84fa4e91af6a88989be7c99e0891cede11f2ca38
+          path: kaykit
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            LICENSE.txt
+            addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue
+            addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/neutral
+            addons/kaykit_medieval_hexagon_pack/Assets/gltf/decoration/nature
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install compile tools only
+        run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0 playwright-core@1.61.1
+      - name: Build pinned original Sim and HIGHFLY K4 human-scale medieval RPG world
+        run: node highfly/scripts/c0_build_web.mjs
+      - name: Stage 50 pinned CC0 and Apache-2.0 media files with individual SHA-1 and SHA-256 validation
+        run: node highfly/scripts/c0_stage_cc0_media.mjs
+      - name: Hard license and no-prohibited-media gate
+        run: node highfly/scripts/c0_release_gate.mjs highfly/dist highfly/reports/c0/web/k3_approved_runtime.json
+      - name: Verify movement and camera directional logic
+        run: node --test highfly/tests/c0_controls.test.mjs
+      - name: Start temporary local preview server
+        run: |
+          nohup python3 -m http.server 4173 --bind 127.0.0.1 --directory highfly/dist > /tmp/highfly-pages-preview.log 2>&1 &
+          sleep 2
+      - name: CRITICAL pre-deployment mobile browser gate
+        run: node highfly/scripts/c0_browser_smoke.mjs
+      - name: Prepare GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload verified HTML/JS/CC0 media/NOTICE for Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: highfly/dist
+  deploy:
+    name: Deploy approved C0-K4 to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: highfly-c0-preview
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        name: Publish via official Pages deployment action
+        uses: actions/deploy-pages@v4

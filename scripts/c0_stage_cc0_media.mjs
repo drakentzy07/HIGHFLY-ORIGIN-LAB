@@ -7,13 +7,14 @@ import { join, dirname } from 'node:path';
 
 const root='highfly';
 const allow=JSON.parse(await readFile(join(root,'config/c0_approved_assets.json'),'utf8'));
-if(allow.schemaVersion!==1||allow.assets.length!==47)
-  throw Error('Unexpected candidate set; exactly forty-seven audited files required');
+if(allow.schemaVersion!==1||allow.assets.length!==50)
+  throw Error('Unexpected candidate set; exactly fifty audited files required');
 const sourcePrefix='kaykit/addons/kaykit_medieval_hexagon_pack/Assets/gltf/';
 const modelOrigins={"building_castle_blue":"buildings/blue/building_castle_blue","building_tower_A_blue":"buildings/blue/building_tower_A_blue","wall_straight":"buildings/neutral/wall_straight","wall_straight_gate":"buildings/neutral/wall_straight_gate","tree_single_A":"decoration/nature/tree_single_A","tree_single_B":"decoration/nature/tree_single_B","rock_single_A":"decoration/nature/rock_single_A"};
 const source=(outpath)=>{
   if(outpath.startsWith('assets/kaykit/')) { const file=outpath.slice('assets/kaykit/'.length);const base=file.replace(/\.(gltf|bin)$/,'');return sourcePrefix+(modelOrigins[base]||('buildings/blue/'+file.replace(/\.[^.]+$/,'')))+(modelOrigins[base]?'.'+file.split('.').pop():'.'+file.split('.').pop()); }
   if(outpath==='assets/quaternius/wolf.glb')return 'upstream/public/models/creatures/wolf.glb';
+  if(outpath.startsWith('assets/original/ships/'))return 'upstream/public/models/biome/'+outpath.slice('assets/original/ships/'.length);
   if(outpath.startsWith('assets/basis/'))return 'upstream/public/basis/'+outpath.slice('assets/basis/'.length);
   if(outpath.startsWith('assets/original/')) {const paths={"chars/wild_boar.glb":"models/creatures/wild_boar.glb","chars/knight.glb":"models/chars/players/knight.glb","chars/ranger.glb":"models/chars/players/ranger.glb","chars/skeleton_warrior.glb":"models/chars/enemies/skeleton_warrior.glb","foliage/oak_1.glb":"models/foliage/oak_1.glb","foliage/pine_1.glb":"models/foliage/pine_1.glb","foliage/rock_1.glb":"models/foliage/rock_1.glb","foliage/bush.glb":"models/foliage/bush.glb","foliage/fern.glb":"models/foliage/fern.glb","terrain/grass.jpg":"textures/terrain/Grass001_Color.jpg","terrain/earth.jpg":"textures/terrain/Ground071_Color.jpg","terrain/rock.jpg":"textures/terrain/Rock026_Color.jpg","terrain/paving.jpg":"textures/terrain/PavingStones046_Color.jpg"};const name=outpath.slice('assets/original/'.length);if(!paths[name])throw Error('Unknown pinned original CC0 source '+name);return 'upstream/public/'+paths[name];}
   throw Error('Not in pinned source map: '+outpath);
