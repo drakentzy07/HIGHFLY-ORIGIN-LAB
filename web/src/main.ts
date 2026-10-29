@@ -3,7 +3,7 @@
 // NO asset files, GLBs, icons, screenshots or sounds are included.
 // Controls/dash/jump are provisional visualization controls, NOT final Fury 360.
 import * as THREE from 'three';
-import { cameraBasis, controlWorldVector, yawAfterDrag } from './control_math.mjs';
+import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
 import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/data.ts';
 import { terrainHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
@@ -247,7 +247,7 @@ canvas.addEventListener('pointerdown',e=>{
 canvas.addEventListener('pointermove',e=>{
   if(cameraPointer!==e.pointerId)return;
   yaw=yawAfterDrag(yaw,e.clientX-prevCameraX);
-  pitch=Math.max(.08,Math.min(.9,pitch+(e.clientY-prevCameraY)*.004));
+  pitch=pitchAfterDrag(pitch,e.clientY-prevCameraY);
   prevCameraX=e.clientX;prevCameraY=e.clientY;
 });
 canvas.addEventListener('pointerup',e=>{if(cameraPointer===e.pointerId)cameraPointer=null;});
@@ -310,11 +310,10 @@ function clock(t:number){
   playerMesh.rotation.y=player.facing||0;
   const focus=new THREE.Vector3(player.pos.x,playerMesh.position.y+1.6,player.pos.z);
   const distance=15;
-  const desired=new THREE.Vector3(
-    focus.x-Math.sin(yaw)*distance,
-    focus.y+4+Math.sin(pitch)*distance*.35,
-    focus.z-Math.cos(yaw)*distance
-  );
+  const position=orbitCameraPosition(focus,yaw,pitch,distance);
+  const desired=new THREE.Vector3(position.x,position.y,position.z);
+  // Keep the following camera slightly above the terrain, including on slopes.
+  desired.y=Math.max(desired.y,height(desired.x,desired.z)+0.8);
   camera.position.lerp(desired,Math.min(1,dt*10));
   camera.lookAt(focus);
   if(hudCarry>.15){
@@ -353,7 +352,7 @@ async function initialize(){
     status.textContent='Eastbrook region · '+buildings+' original building coordinates';
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
-      yaw,position:{x:player.pos.x,z:player.pos.z},right:cameraBasis(yaw).right,
+      yaw,pitch,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},right:cameraBasis(yaw).right,
       forward:cameraBasis(yaw).forward
     }),configurable:false});
     loader.style.display='none';
