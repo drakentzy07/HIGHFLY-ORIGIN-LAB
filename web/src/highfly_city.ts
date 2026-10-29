@@ -60,10 +60,10 @@ function makeBlock(a:{x:number;z:number},b:{x:number;z:number},kind:string,radiu
 export function buildHighflyFirstCity(models:Map<string,THREE.Group>){
  const root=new THREE.Group();root.name='HIGHFLY-K5-expanded-72m-fortress';
  const blockers:CityWall[]=[],passages:{x:number;z:number}[]=[];
- // 28 surveyed chords: a much larger city than K4 but with the original
+ // 40 surveyed chords: a much larger city than K4 but with the original
  // Eastbrook world data, river and docks untouched. Wet spans are intentional
  // harbour access rather than walls sunk into water.
- const N=28,step=2*Math.PI/N,points=Array.from({length:N},(_,i)=>anchor(i*step));
+ const N=40,step=2*Math.PI/N,points=Array.from({length:N},(_,i)=>anchor(i*step));
  const valid=Array.from({length:N},(_,i)=>{
    const a=points[i],b=points[(i+1)%N];return {i,a,b,mid:{x:(a.x+b.x)/2,z:(a.z+b.z)/2}};
  }).filter(q=>distance(q.a,q.b)>=3&&safeWall(q.a,q.b));
