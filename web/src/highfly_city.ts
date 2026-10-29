@@ -18,12 +18,23 @@ function segmentDistance(px:number,pz:number,c:CityWall){
  const t=Math.max(0,Math.min(1,((px-c.x1)*dx+(pz-c.z1)*dz)/k));
  return Math.hypot(px-c.x1-t*dx,pz-c.z1-t*dz);
 }
-export function blockedByCity(x:number,z:number,blockers:readonly CityWall[]){return blockers.some(b=>segmentDistance(x,z,b)<b.radius+.45)}
+function minimumCityClearance(x:number,z:number,blockers:readonly CityWall[]){
+ return blockers.reduce((minimum,b)=>Math.min(minimum,segmentDistance(x,z,b)-b.radius-.45),Infinity);
+}
+export function blockedByCity(x:number,z:number,blockers:readonly CityWall[]){return minimumCityClearance(x,z,blockers)<0;}
+function safeStep(x:number,z:number,nx:number,nz:number,blockers:readonly CityWall[]){
+ const previous=minimumCityClearance(x,z,blockers);
+ const next=minimumCityClearance(nx,nz,blockers);
+ // A model was enlarged around the original spawn, leaving the player INSIDE
+ // the expanded wall collider. Allow only moves which DECREASE penetration.
+ // Without this, the original K4 spawn (-94,-58) was pinned forever.
+ return next>=0||(previous<0&&next>previous+1e-5);
+}
 export function resolveCityMove(x:number,z:number,nx:number,nz:number,blocks:readonly CityWall[]){
  let px=x,pz=z;const dx=nx-x,dz=nz-z,n=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.3));
  for(let i=0;i<n;i++){const sx=dx/n,sz=dz/n;
-   if(!blockedByCity(px+sx,pz+sz,blocks)){px+=sx;pz+=sz}
-   else{if(!blockedByCity(px+sx,pz,blocks))px+=sx;if(!blockedByCity(px,pz+sz,blocks))pz+=sz}
+   if(safeStep(px,pz,px+sx,pz+sz,blocks)){px+=sx;pz+=sz}
+   else{if(safeStep(px,pz,px+sx,pz,blocks))px+=sx;if(safeStep(px,pz,px,pz+sz,blocks))pz+=sz}
  }return {x:px,z:pz};
 }
 function add(root:THREE.Group,models:Map<string,THREE.Group>,key:string,x:number,z:number,metres:number,rotation=0,span=0){
