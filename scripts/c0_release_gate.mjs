@@ -33,7 +33,9 @@ export function inspectMedia(path,contents,approved){
   return null;
 }
 export function detectEmbeds(code){
-  if(/data:(?:image|audio|video|font|model)\//i.test(code))
+  // GLTFLoader and Three.js contain the *format string* 'data:image/'.
+  // Block actual literal data URI payloads, not runtime parser/regex templates.
+  if(/data:(?:image|audio|video|font|model)\/[a-z0-9.+-]+(?:;[a-z0-9.+-]+)*(?:;base64)?,[a-z0-9+/=%]{24,}/i.test(code))
     return 'EMBEDDED_MEDIA_REVIEW_REQUIRED';
   if(/(?:worldofclaudecraft-logo|woc_logo_square|fel_meteor_impact\.png)/i.test(code))
     return 'RESTRICTED_BRANDING_OR_ASSET_REFERENCE';
