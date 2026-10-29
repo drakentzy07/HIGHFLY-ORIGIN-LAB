@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
@@ -61,6 +62,10 @@ scene.fog = new THREE.Fog(0x87bbd3, 65, 215);
 const camera = new THREE.PerspectiveCamera(64,1,0.1,320);
 const renderer = new THREE.WebGLRenderer({canvas,antialias:false,alpha:false,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.2));
+const ktx2Loader=new KTX2Loader();
+ktx2Loader.setTranscoderPath(new URL('./assets/basis/',document.baseURI).href);
+ktx2Loader.detectSupport(renderer);
+approvedLoader.setKTX2Loader(ktx2Loader);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.shadowMap.enabled=false;
 scene.add(new THREE.HemisphereLight(0xe2efff,0x58734e,2.2));

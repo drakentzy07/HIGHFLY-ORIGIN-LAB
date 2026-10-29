@@ -52,6 +52,7 @@ jobs:
             public/models/chars/enemies
             public/models/foliage
             public/textures/terrain
+            public/basis
           sparse-checkout-cone-mode: true
           persist-credentials: false
       - name: Checkout pinned official KayKit CC0 buildings
@@ -77,7 +78,7 @@ jobs:
         run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0 playwright-core@1.61.1
       - name: Build pinned original Sim and HIGHFLY K3 true-asset world
         run: node highfly/scripts/c0_build_web.mjs
-      - name: Stage 45 pinned CC0 media files with individual SHA-1 and SHA-256 validation
+      - name: Stage 47 pinned CC0 and Apache-2.0 media files with individual SHA-1 and SHA-256 validation
         run: node highfly/scripts/c0_stage_cc0_media.mjs
       - name: Hard license and no-prohibited-media gate
         run: node highfly/scripts/c0_release_gate.mjs highfly/dist highfly/reports/c0/web/k3_approved_runtime.json

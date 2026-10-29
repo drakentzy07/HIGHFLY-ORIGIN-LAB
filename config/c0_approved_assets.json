@@ -373,6 +373,26 @@
       "provider": "Quaternius — animated wild boar CC0",
       "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/creatures/wild_boar.glb",
       "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/basis/basis_transcoder.js",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "c843f08d1326e6fad2ce049efa8dc4703ee20f9f",
+      "license": "Apache-2.0",
+      "provider": "Binomial LLC — Basis Universal transcoder",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/basis/basis_transcoder.js",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md",
+      "notice": "Basis Universal transcoder by Binomial LLC — Apache License 2.0, with attribution and license at https://github.com/BinomialLLC/basis_universal"
+    },
+    {
+      "path": "assets/basis/basis_transcoder.wasm",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "bc64682561438128604ac550da774f8cc6617460",
+      "license": "Apache-2.0",
+      "provider": "Binomial LLC — Basis Universal transcoder",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/basis/basis_transcoder.wasm",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md",
+      "notice": "Basis Universal transcoder by Binomial LLC — Apache License 2.0, with attribution and license at https://github.com/BinomialLLC/basis_universal"
     }
   ],
   "comment": "K3: 32 K2 hash-locked KayKit/Quaternius media plus 12 original pinned CC0 media verified by Git blob SHA-1 and runtime SHA-256. Runtime approval manifest written after source verification."
