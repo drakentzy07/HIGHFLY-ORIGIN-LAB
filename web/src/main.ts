@@ -12,7 +12,8 @@ import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/da
 import { terrainHeight, groundHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
 import { resolveMovement } from '../../../upstream/src/sim/colliders.ts';
 import { WorldStreamer } from './world_stream.ts';
-import { createHighflyFigure } from './highfly_actor.ts';
+import { makeRig, type RigController } from './highfly_rigs.ts';
+import { loadWorldTerrainMaterial } from './highfly_terrain.ts';
 import { EASTBROOK_LAYOUT } from '../../../upstream/src/sim/eastbrook_layout.ts';
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 
@@ -42,8 +43,15 @@ const approvedLoader=new GLTFLoader();
 approvedLoader.setMeshoptDecoder(MeshoptDecoder);
 const buildingVisuals=new Map<string,THREE.Group>();
 let wolfVisual:THREE.Group|null=null;
+let boarVisual:THREE.Group|null=null;
+let skeletonVisual:THREE.Group|null=null;
+let npcVisual:THREE.Group|null=null;
+let npcClips:THREE.AnimationClip[]=[];
+let skeletonClips:THREE.AnimationClip[]=[];
+let boarClips:THREE.AnimationClip[]=[];
+const entityRigs=new Map<number,RigController>();
+let hunterRig:RigController|null=null;
 let wolfClips:THREE.AnimationClip[]=[];
-const wolfMixers=new Map<number,THREE.AnimationMixer>();
 let realBuildingsShown=0;
 let realWolvesShown=0;
 
@@ -69,7 +77,7 @@ const otherMobMat=material(0xa15d83);
 const buildingMat=material(0x9eaa9a);
 const roofMat=material(0x70485a);
 const markerMat=material(0x37e5a8);
-const playerMesh=createHighflyFigure('hunter'); // Temporary K2 actor; rigged Hunter comes next.
+const playerMesh=new THREE.Group();playerMesh.name='highfly-k3-kaykit-hunter';
 scene.add(playerMesh);
 
 const height=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
@@ -91,6 +99,24 @@ async function loadApprovedModels(){
   const wolf=await approvedLoader.loadAsync(approvedUrl('assets/quaternius/wolf.glb'));
   wolfVisual=wolf.scene;wolfClips=wolf.animations;
   if(!wolfVisual||!wolfClips.length)throw Error('Quaternius wolf or animations not available');
+  const fromOriginal=async(path:string)=>approvedLoader.loadAsync(approvedUrl('assets/original/'+path));
+  const [knight,ranger,skeleton,oak,pine,rock,bush,fern,boar]=await Promise.all([
+    fromOriginal('chars/knight.glb'),fromOriginal('chars/ranger.glb'),
+    fromOriginal('chars/skeleton_warrior.glb'),fromOriginal('foliage/oak_1.glb'),
+    fromOriginal('foliage/pine_1.glb'),fromOriginal('foliage/rock_1.glb'),
+    fromOriginal('foliage/bush.glb'),fromOriginal('foliage/fern.glb'),
+    fromOriginal('chars/wild_boar.glb')
+  ]);
+  hunterRig=makeRig(knight.scene,knight.animations,2.6);playerMesh.add(hunterRig.root);
+  npcVisual=ranger.scene;npcClips=ranger.animations;
+  skeletonVisual=skeleton.scene;skeletonClips=skeleton.animations;
+  boarVisual=boar.scene;boarClips=boar.animations;
+  buildingVisuals.set('oakNature',oak.scene);
+  buildingVisuals.set('pineNature',pine.scene);
+  buildingVisuals.set('rockNature',rock.scene);
+  buildingVisuals.set('bushNature',bush.scene);
+  buildingVisuals.set('fernNature',fern.scene);
+  if(!playerMesh.children.length||!npcClips.length||!knight.animations.length)throw Error('K3: original KayKit characters or skeletal animation clips missing');
 }
 
 function posOf(item:any):{x:number,z:number}|null{
@@ -106,154 +132,22 @@ function addMesh(geometry:THREE.BufferGeometry,mat:THREE.Material,x:number,y:num
   const mesh=new THREE.Mesh(geometry,mat);mesh.position.set(x,y,z);mesh.rotation.y=rot;
   scene.add(mesh);return mesh;
 }
-function generateGround(cx:number,cz:number){
-  const cells=58,side=250;
-  const minX=cx-side/2,minZ=cz-side/2,step=side/cells;
-  const vertices:number[]=[];const colors:number[]=[];const indices:number[]=[];
-  const grass=new THREE.Color(0x648657),sand=new THREE.Color(0xd5bb80);
-  const green=new THREE.Color(0x58805c),waterline=WATER_LEVEL;
-  for(let zi=0;zi<=cells;zi++)for(let xi=0;xi<=cells;xi++){
-    const x=minX+xi*step,z=minZ+zi*step,y=height(x,z);
-    vertices.push(x,y,z);
-    const col=green.clone().lerp(grass,.35+.3*Math.sin(x*.07+z*.06));
-    if(y<waterline+1.8)col.lerp(sand,Math.max(0,Math.min(1,(waterline+1.8-y)/3.0)));
-    if(y>13)col.lerp(new THREE.Color(0x92948b),Math.min(.55,(y-13)/28));
-    colors.push(col.r,col.g,col.b);
-  }
-  for(let z=0;z<cells;z++)for(let x=0;x<cells;x++){
-    const a=z*(cells+1)+x,b=a+1,c=a+cells+1,d=c+1;
-    indices.push(a,c,b,b,c,d);
-  }
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
-  geo.setIndex(indices);geo.computeVertexNormals();
-  const land=new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));
-  scene.add(land);
-  const water=new THREE.Mesh(new THREE.PlaneGeometry(side,side),
-    new THREE.MeshStandardMaterial({color:0x4b94ac,metalness:.05,transparent:true,opacity:.63,depthWrite:false}));
-  water.rotation.x=-Math.PI/2;water.position.set(cx,waterline,cz);scene.add(water);
-}
-function renderRoads(cx:number,cz:number) {
-  const roads:any[]=BUILTIN_WORLD.roads||[];
-  const mat=new THREE.LineBasicMaterial({color:0xcab28d,transparent:true,opacity:.7,depthTest:true});
-  let shown=0;
-  for(const road of roads){
-    if(!Array.isArray(road)||road.length<2)continue;
-    const points:THREE.Vector3[]=[];
-    for(let i=0;i<road.length-1;i++){
-      const a=posOf(road[i]),b=posOf(road[i+1]);
-      if(!a||!b||dist2(a,{x:cx,z:cz})>170*170&&dist2(b,{x:cx,z:cz})>170*170)continue;
-      const count=Math.max(2,Math.min(12,Math.ceil(Math.sqrt(dist2(a,b))/3)));
-      for(let j=0;j<=count;j++){
-        const t=j/count,x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t;
-        points.push(new THREE.Vector3(x,height(x,z)+.13,z));
-      }
-    }
-    if(points.length>1){
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),mat));
-      shown++;
-    }
-  }
-  return shown;
-}
-function renderBuildings(cx:number,cz:number){
-  const props:any=BUILTIN_WORLD.props||{};
-  let count=0;
-  for(const b of props.buildings||[]){
-    const p=posOf(b);if(!p||dist2(p,{x:cx,z:cz})>145*145)continue;
-    const w=Math.max(3,Math.min(18,Number(b.w??b.width??8)));
-    const d=Math.max(4,Math.min(20,Number(b.d??b.depth??9)));
-    const h=Math.max(4,Math.min(18,Number(b.h??b.height??5.5)));
-    const y=height(p.x,p.z);
-    const key=String(b.assetId||'').toLowerCase();
-    const kind=String(b.kind||'').toLowerCase();
-    const selected=/tavern|inn/.test(key+' '+kind)?'tavern':(/home|house/.test(key+' '+kind)?'house':null);
-    const template=selected?buildingVisuals.get(selected):null;
-    if(template){
-      const model=template.clone(true);
-      const bounds=new THREE.Box3().setFromObject(model);
-      const size=new THREE.Vector3();bounds.getSize(size);
-      const scale=Math.max(.01,Math.min(w/Math.max(.01,size.x),d/Math.max(.01,size.z)));
-      model.scale.setScalar(scale);
-      model.position.set(p.x,y-bounds.min.y*scale,p.z);
-      model.rotation.y=Number(b.rot??0);
-      model.userData.provenance='Pinned official KayKit Medieval Hexagon CC0';
-      scene.add(model);
-      realBuildingsShown++;
-      count++;
-      continue;
-    }
-    const base=addMesh(new THREE.BoxGeometry(w,h,d),buildingMat,p.x,y+h/2,p.z,Number(b.rot??0));
-    base.userData.provenance='Original BUILTIN_WORLD building placement; original mesh replaced';
-    const roof=addMesh(new THREE.ConeGeometry(Math.max(w,d)*.78,3.9,4),roofMat,
-      p.x,y+h+1.3,p.z,Math.PI/4+Number(b.rot??0));
-    roof.userData.provenance='Procedural roof for original building position';
-    count++;
-  }
-  // Marker for the real Eastbrook zone hub, not an invented settlement position.
-  const hub=posOf(ZONES[0]?.hub);
-  if(hub){
-    const y=height(hub.x,hub.z);
-    const tower=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,7,8),markerMat);
-    tower.position.set(hub.x,y+3.5,hub.z);scene.add(tower);
-  }
-  return count;
-}
-function seeded(seed:number){let s=seed>>>0;return()=>{s=(Math.imul(1664525,s)+1013904223)>>>0;return s/4294967296;};}
-function renderTemporaryVegetation(cx:number,cz:number) {
-  const rand=seeded(20161),count=135;
-  const trunkGeo=new THREE.CylinderGeometry(.24,.42,2.1,5);
-  const leafGeo=new THREE.ConeGeometry(1.8,4.3,6);
-  const wood=new THREE.InstancedMesh(trunkGeo,treeTrunkMat,count);
-  const leaf=new THREE.InstancedMesh(leafGeo,treeLeafMat,count);
-  const dummy=new THREE.Object3D();
-  const hub=posOf(ZONES[0]?.hub)||{x:-14,z:-100};
-  for(let i=0;i<count;i++){
-    const x=cx+(rand()-.5)*215,z=cz+(rand()-.5)*215;
-    const forbidden=dist2({x,z},hub)<40*40;
-    const scale=.7+rand()*1.2;
-    const y=height(x,z);
-    const valid=!forbidden&&y>WATER_LEVEL+1;
-    dummy.position.set(x,valid?y+1.1*scale:-1500,z);
-    dummy.scale.setScalar(scale);dummy.updateMatrix();wood.setMatrixAt(i,dummy.matrix);
-    dummy.position.y=valid?y+3.3*scale:-1500;
-    dummy.updateMatrix();leaf.setMatrixAt(i,dummy.matrix);
-  }
-  wood.instanceMatrix.needsUpdate=true;leaf.instanceMatrix.needsUpdate=true;
-  scene.add(wood,leaf);
-}
 const entityMeshes=new Map<number,THREE.Group>();
 function makeEntity(e:any){
-  const group=new THREE.Group();
-  let model:THREE.Object3D;
-  if(e.kind==='npc'){
-    model=createHighflyFigure('npc');
-    model.scale.setScalar(.9);
-  }else{
-    const wolf=/wolf|hound/i.test((e.templateId||'')+' '+(e.name||''));
-    if(wolf&&wolfVisual&&realWolvesShown<12){
-      model=cloneSkinned(wolfVisual);
-      const bbox=new THREE.Box3().setFromObject(model);
-      const size=new THREE.Vector3();bbox.getSize(size);
-      const sizeScale=1.8/Math.max(.1,size.x,size.z);
-      model.scale.setScalar(sizeScale);
-      model.position.y=-bbox.min.y*sizeScale;
-      group.userData.approvedWolf=true;
-      realWolvesShown++;
-      if(wolfClips.length){
-        const mixer=new THREE.AnimationMixer(model);
-        const clip=wolfClips.find(x=>/idle/i.test(x.name))||wolfClips[0];
-        mixer.clipAction(clip).play();
-        wolfMixers.set(e.id,mixer);
-      }
-    }else{
-      model=new THREE.Mesh(wolf?new THREE.BoxGeometry(1.8,.9,2.35):new THREE.IcosahedronGeometry(.82,0),wolf?wolfMat:otherMobMat);
-      model.position.y=wolf ? 0.90 : 1.1;
-    }
-  }
-  group.add(model);
-
+  const group=new THREE.Group(),key=String(e.templateId||'')+' '+String(e.name||'');
+  let model:THREE.Object3D|null=null,clips:THREE.AnimationClip[]=[];
+  if(e.kind==='npc'&&npcVisual){model=npcVisual;clips=npcClips;}
+  else if(/wolf|hound/i.test(key)&&wolfVisual){model=wolfVisual;clips=wolfClips;}
+  else if(/boar/i.test(key)&&boarVisual){model=boarVisual;clips=boarClips;}
+  else if(/skeleton|bone|undead/i.test(key)&&skeletonVisual){model=skeletonVisual;clips=skeletonClips;}
+  // Never fabricate a box/icosahedron for an unavailable enemy.
+  if(model){
+    const targetHeight=e.kind==='npc'?2.45:/wolf|hound|boar/i.test(key)?1.6:2.45;
+    const rig=makeRig(model,clips,targetHeight);
+    group.add(rig.root);entityRigs.set(e.id,rig);
+    group.userData.approvedWolf=/wolf|hound/i.test(key);
+    if(group.userData.approvedWolf)realWolvesShown++;
+  }else group.userData.unrepresentedSourceAsset=true;
   group.userData.entityId=e.id;group.userData.kind=e.kind;scene.add(group);return group;
 }
 function updateEntities(){
@@ -268,12 +162,12 @@ function updateEntities(){
     if(!group){group=makeEntity(e);entityMeshes.set(e.id,group);}
     group.position.set(e.pos.x,e.pos.y,e.pos.z);
     group.rotation.y=e.facing||0;
-    if(e.kind==='npc')group.children[0]?.userData.animate?.(elapsed,false,false);
+    entityRigs.get(e.id)?.update(.15,false);
   }
   for(const [id,group] of entityMeshes)
     if(!seen.has(id)){
       if(group.userData.approvedWolf)realWolvesShown--;
-      wolfMixers.delete(id);scene.remove(group);entityMeshes.delete(id);
+entityRigs.get(id)?.dispose();entityRigs.delete(id);scene.remove(group);entityMeshes.delete(id);
     }
 }
 function resize(){
@@ -331,11 +225,12 @@ function attack(){
     const d=dist2(e.pos,player.pos);
     if(d<best){best=d;closest=e;}
   }
-  if(!closest){status.textContent='ATK: no nearby mob in original Sim';return;}
+  if(!closest){hunterRig?.attack();status.textContent='ATK: no nearby mob in original Sim';return;}
   try{
     sim.targetEntity(closest.id,player.id);
     if(typeof sim.startAutoAttack==='function')sim.startAutoAttack(player.id);
     target=closest;
+    hunterRig?.attack();
     status.textContent='ATK: original Sim target '+closest.name;
   }catch(err){status.textContent='Original attack command needs adapter: '+String(err).slice(0,110);}
 }
@@ -343,8 +238,8 @@ function clock(t:number){
   const dt=Math.min(.05,Math.max(0,(t-lastFrame)/1000));lastFrame=t;
   if(!player)return;
   elapsed+=dt;simCarry+=dt;hudCarry+=dt;
-  for(const mixer of wolfMixers.values())mixer.update(dt);
-  playerMesh.userData.animate?.(elapsed,Math.hypot(MOVE.x,MOVE.y)>.1,!!target);
+  hunterRig?.update(dt,Math.hypot(MOVE.x,MOVE.y)>.1);
+  if(target&&((target.hp??0)<=0||dist2(target.pos,player.pos)>28*28))target=null;
   // Preview movement applies to the original Sim entity and heightfield. Not the
   // original final movement/physics API, which remains to be integrated.
   let ix=MOVE.x,iy=-MOVE.y;
@@ -358,8 +253,9 @@ function clock(t:number){
     const speed=(dashLeft>0?18:7.2)*dt;
     const direction=controlWorldVector(ix,iy,yaw);
     const next=resolveMovement(WORLD_SEED,player.pos.x,player.pos.z,player.pos.x+direction.x*speed,player.pos.z+direction.z*speed);
-    player.pos.x=next.x;
-    player.pos.z=next.z;
+    const fixed=worldStreamer?.solveMove(player.pos.x,player.pos.z,next.x,next.z)??next;
+    player.pos.x=fixed.x;
+    player.pos.z=fixed.z;
     player.facing=Math.atan2(direction.x,direction.z);
     player.vx=0;player.vz=0;
   }
@@ -419,12 +315,14 @@ async function initialize(){
     await new Promise(resolve=>setTimeout(resolve,30));
     loadText.textContent='Loading verified KayKit town buildings and Quaternius wolf…';
     await loadApprovedModels();
-    worldStreamer=new WorldStreamer(scene,buildingVisuals);
+    loadText.textContent='Loading approved ambientCG terrain materials…';
+    const terrainMaterial=await loadWorldTerrainMaterial();
+    worldStreamer=new WorldStreamer(scene,buildingVisuals,terrainMaterial);
     worldStreamer.update(player.pos.x,player.pos.z,true);
     realBuildingsShown=worldStreamer.approvedVisible;
     const buildings=realBuildingsShown;
     updateEntities();
-    status.textContent='Eastbrook K1 · '+buildings+' construcciones CC0 visibles';
+    status.textContent='K3 · '+buildings+' construcciones CC0 visibles';
     const zonesSelect=document.getElementById('zoneJump') as HTMLSelectElement|null;
     if(zonesSelect){for(let i=0;i<ZONES.length;i++){const opt=document.createElement('option');opt.value=String(i);opt.textContent=(i+1)+'. '+ZONES[i].name;zonesSelect.appendChild(opt);}
       zonesSelect.addEventListener('change',()=>{const zone=ZONES[Number(zonesSelect.value)];if(!zone)return;
@@ -455,7 +353,7 @@ async function initialize(){
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
       yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),church:buildingVisuals.has('church'),blacksmith:buildingVisuals.has('blacksmith'),market:buildingVisuals.has('market'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
-      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
+      forward:cameraBasis(yaw).forward,actorVisible:playerMesh.visible,city:worldStreamer?.city,cityBlockers:worldStreamer?.blockerCount,hunterClips:hunterRig?.clipCount,npcClips:npcClips.length,landmarkCount:poiSelect?.options.length||0,npcRendered:[...entityMeshes.values()].filter(v=>v.userData.kind==='npc').length
     }),configurable:false});
     loader.style.display='none';
     lastFrame=performance.now();
