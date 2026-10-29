@@ -1,5 +1,54 @@
 {
   "schemaVersion": 1,
-  "assets": [],
-  "comment": "Empty by design. Every distributed resource must be reviewed and recorded individually before adding it here."
+  "assets": [
+    {
+      "path": "assets/kaykit/building_home_A_blue.gltf",
+      "sha256": "60b3568e086d586b491eed8168c46acb61bb9670fb2c296faa64929b18dfcbea",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_home_A_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_home_A_blue.bin",
+      "sha256": "31c30bc9d4fb9ac6182e20331f2501ec153131ca01a57d8412a6b8e6219c23fd",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_home_A_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_tavern_blue.gltf",
+      "sha256": "58a3573cf468f9c5f1d03a6da74fbc884f5f662ccddbfef2a10860abfe50109b",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_tavern_blue.gltf",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/building_tavern_blue.bin",
+      "sha256": "00a4f91c275d168a4fcaea5f35cd4839047b498232f5f807d29ec17aa9490fe9",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_tavern_blue.bin",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/kaykit/hexagons_medieval.png",
+      "sha256": "5301a06866ba3be68dcc14cc429bd6d0f69004b72884283715d7e233f2e9782e",
+      "license": "CC0-1.0",
+      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
+      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/hexagons_medieval.png",
+      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/quaternius/wolf.glb",
+      "sha256": "9ae2ad8b2ab23a1aa65027292075dfd6ebd1b222de017a5abe8de5dc8c1e8936",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — wolf credited in World of ClaudeCraft v0.44.7 CREDITS",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/creatures/wolf.glb",
+      "licenseEvidence": "https://quaternius.com/packs/ultimateanimatedanimals.html"
+    }
+  ],
+  "comment": "Exact file hashes recorded from pinned official KayKit CC0 repo and Quaternius wolf credited by ClaudeCraft v0.44.7. Only these six files are authorized. Player-source assets excluded."
 }
