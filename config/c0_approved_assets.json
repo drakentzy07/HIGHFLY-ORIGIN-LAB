@@ -178,38 +178,6 @@
       "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
     },
     {
-      "path": "assets/kaykit/building_docks_blue.gltf",
-      "sha256": "660af878832981e8de016882a5d46aea397ba78f62ea097759d2fa423827ab5a",
-      "license": "CC0-1.0",
-      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
-      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_docks_blue.gltf",
-      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
-    },
-    {
-      "path": "assets/kaykit/building_docks_blue.bin",
-      "sha256": "8f5394440653dcb5143e6e104fadfbe334867c01ddec65aa23b80a6f7d532d24",
-      "license": "CC0-1.0",
-      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
-      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_docks_blue.bin",
-      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
-    },
-    {
-      "path": "assets/kaykit/building_shipyard_blue.gltf",
-      "sha256": "f69b7ae6e2f3c4ea882acc2202e1a3d3185b0f4fc3777294ae5c468514f39e33",
-      "license": "CC0-1.0",
-      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
-      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_shipyard_blue.gltf",
-      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
-    },
-    {
-      "path": "assets/kaykit/building_shipyard_blue.bin",
-      "sha256": "ca01255a1a829404d992883f326085e20d6bc77ac7126cee9d0b548abaacfd41",
-      "license": "CC0-1.0",
-      "provider": "Kay Lousberg — KayKit Medieval Hexagon",
-      "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue/building_shipyard_blue.bin",
-      "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
-    },
-    {
       "path": "assets/kaykit/wall_straight.gltf",
       "sha256": "7f466420a00fac9c6eb568178a81ef2719ac3c710f1fdc4027f8fc46a262ad7a",
       "license": "CC0-1.0",
@@ -290,5 +258,5 @@
       "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
     }
   ],
-  "comment": "K2: 36 exact CC0 media files. 18 K1 plus 18 castle/tower/wall/gate/nature/harbor assets. No full SOURCE pack."
+  "comment": "K2: 32 exact CC0 media files. 18 K1 plus 14 castle/tower/wall/gate/nature assets. No full SOURCE pack."
 }

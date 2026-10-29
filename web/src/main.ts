@@ -81,7 +81,7 @@ async function loadApprovedModels(){
     church:'building_church_blue',blacksmith:'building_blacksmith_blue',
     market:'building_market_blue',barracks:'building_barracks_blue',well:'building_well_blue',
     castle:'building_castle_blue',fortressTower:'building_tower_A_blue',fortressWall:'wall_straight',fortressGate:'wall_straight_gate',
-    treeA:'tree_single_A',treeB:'tree_single_B',rockA:'rock_single_A',docks:'building_docks_blue',shipyard:'building_shipyard_blue'
+    treeA:'tree_single_A',treeB:'tree_single_B',rockA:'rock_single_A'
   };
   const results=await Promise.all(Object.entries(candidates).map(async ([key,file])=>{
     const gltf=await approvedLoader.loadAsync(approvedUrl('assets/kaykit/'+file+'.gltf'));
