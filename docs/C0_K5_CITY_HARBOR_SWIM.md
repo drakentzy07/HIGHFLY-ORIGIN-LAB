@@ -5,7 +5,7 @@ Branch `c0-k5-walled-city-harbor-fixes` starts at K4 `923a43f9f7eeedc4362838b2f7
 
 ## Review of the four-minute-twenty-two-second S23 test
 - 0:18–0:30 houses/market outside K4 40-m radius; K5 creates 72m perimeter offset toward the original harbor district, preserving original 11 building placements.
-- 0:33–1:05 gate panels and arch clip into terrain/wall; hide faulty pivoting leaves, resize the existing licensed wall/arch geometry to match the 28 surveyed spans.
+- 0:33–1:05 gate panels and arch clip into terrain/wall; hide faulty pivoting leaves, resize the existing licensed wall/arch geometry to match the 40 surveyed spans.
 - 1:09–1:25 some apparent invisible wall collisions; within rebuilt city, replace legacy footprint collision with currently visible building shell outlines plus authored fortress.
 - 1:30–2:12 city too crowded: retain real castle/chapel/market/inn/smithy and room for additional districts; do not invent new licensed models.
 - 2:18–2:48 real Sim corpses/loot/inventory stack functioning; preserve original `Sim.lootCorpse`, `corpseCanInteract`, no dropped cube items.
