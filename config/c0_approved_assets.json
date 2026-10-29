@@ -256,7 +256,115 @@
       "provider": "Kay Lousberg — KayKit Medieval Hexagon",
       "sourceUrl": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/addons/kaykit_medieval_hexagon_pack/Assets/gltf/decoration/nature/rock_single_A.bin",
       "licenseEvidence": "https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0/blob/84fa4e91af6a88989be7c99e0891cede11f2ca38/LICENSE.txt"
+    },
+    {
+      "path": "assets/original/chars/knight.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "cd2820b4e6c6402d8d54734464fa5fd15d33834f",
+      "license": "CC0-1.0",
+      "provider": "KayKit — Adventurers CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/chars/players/knight.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/chars/ranger.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "f76b38e473ff4ab7278dedeefd75066bd3218803",
+      "license": "CC0-1.0",
+      "provider": "KayKit — Adventurers CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/chars/players/ranger.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/chars/skeleton_warrior.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "d941c169334768ddfac41a2153afd202d1b4318e",
+      "license": "CC0-1.0",
+      "provider": "KayKit — Skeletons CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/chars/enemies/skeleton_warrior.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/foliage/oak_1.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "decbef02a1a2a5904232b60b1fae8e5c2fd1e5d3",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — Stylized Nature MegaKit CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/foliage/oak_1.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/foliage/pine_1.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "43e0328735bcca037ac87f32c11a9b9b52cb11fa",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — Stylized Nature MegaKit CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/foliage/pine_1.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/foliage/rock_1.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "9a89d0ed1ddaadda62938c487c3279999c370c58",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — Stylized Nature MegaKit CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/foliage/rock_1.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/foliage/bush.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "724c8092d1bb73cce0b5ffbe0d09a59fbbbc326f",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — Stylized Nature MegaKit CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/foliage/bush.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/foliage/fern.glb",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "96ad9486e50bd8cebc69aa2e6d0aae58107c1417",
+      "license": "CC0-1.0",
+      "provider": "Quaternius — Stylized Nature MegaKit CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/models/foliage/fern.glb",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/terrain/grass.jpg",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "bcf62fb9984391be18968aabd63e2c755cab8e8e",
+      "license": "CC0-1.0",
+      "provider": "ambientCG — Grass001 CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/textures/terrain/Grass001_Color.jpg",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/terrain/earth.jpg",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "3a05e03698f9f5f4bb211afc4d96e1698aa641bd",
+      "license": "CC0-1.0",
+      "provider": "ambientCG — Ground071 CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/textures/terrain/Ground071_Color.jpg",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/terrain/rock.jpg",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "ea5906b52fe2f87398e20086fec18612d555eded",
+      "license": "CC0-1.0",
+      "provider": "ambientCG — Rock026 CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/textures/terrain/Rock026_Color.jpg",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
+    },
+    {
+      "path": "assets/original/terrain/paving.jpg",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "gitBlobSha": "bf429daa499a7d524afe1aaa971c48f6963eb384",
+      "license": "CC0-1.0",
+      "provider": "ambientCG — PavingStones046 CC0",
+      "sourceUrl": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/public/textures/terrain/PavingStones046_Color.jpg",
+      "licenseEvidence": "https://github.com/levy-street/world-of-claudecraft/blob/493c35a108cef6c8aa290e8793107b1cd117886e/CREDITS.md"
     }
   ],
-  "comment": "K2: 32 exact CC0 media files. 18 K1 plus 14 castle/tower/wall/gate/nature assets. No full SOURCE pack."
+  "comment": "K3: 32 K2 hash-locked KayKit/Quaternius media plus 12 original pinned CC0 media verified by Git blob SHA-1 and runtime SHA-256. Runtime approval manifest written after source verification."
 }
