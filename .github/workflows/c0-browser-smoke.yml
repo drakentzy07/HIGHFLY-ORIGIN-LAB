@@ -8,6 +8,7 @@ on:
       - "scripts/c0_browser_smoke.mjs"
       - "tests/c0_controls.test.mjs"
       - "scripts/c0_build_web.mjs"
+      - "scripts/c0_stage_cc0_media.mjs"
       - ".github/workflows/c0-browser-smoke.yml"
   workflow_dispatch:
 
@@ -34,6 +35,21 @@ jobs:
           fetch-depth: 1
           sparse-checkout: |
             src
+            CREDITS.md
+            public/models/creatures
+          sparse-checkout-cone-mode: true
+          persist-credentials: false
+      - name: Checkout pinned official KayKit CC0 buildings
+        uses: actions/checkout@v4
+        with:
+          repository: KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0
+          ref: 84fa4e91af6a88989be7c99e0891cede11f2ca38
+          path: kaykit
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            LICENSE.txt
+            addons/kaykit_medieval_hexagon_pack/Assets/gltf/buildings/blue
           sparse-checkout-cone-mode: true
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -45,6 +61,8 @@ jobs:
         run: node --test highfly/tests/c0_controls.test.mjs
       - name: Build original-code browser simulation
         run: node highfly/scripts/c0_build_web.mjs
+      - name: Stage six verified CC0 model files (2 buildings + wolf)
+        run: node highfly/scripts/c0_stage_cc0_media.mjs
       - name: Licence and asset gate
         run: node highfly/scripts/c0_release_gate.mjs highfly/dist highfly/config/c0_approved_assets.json
       - name: Start local static web host
