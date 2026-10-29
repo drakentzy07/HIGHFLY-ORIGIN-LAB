@@ -1,52 +1,94 @@
-// HIGHFLY K2 — authored visual foundation over immutable original ClaudeCraft geography.
-// Visual overlay only: original Sim, camp spawns, quests and terrain seed remain intact.
-// Fortress colliders/quests are NOT yet active; this phase validates true CC0 geometry.
+// HIGHFLY K3: one authored placement is shared by rendering and physical collision.
+// The pinned ClaudeCraft seed and BUILTIN_WORLD remain immutable.
 import * as THREE from 'three';
 import { EASTBROOK_LAYOUT } from '../../../upstream/src/sim/eastbrook_layout.ts';
-import { terrainHeight } from '../../../upstream/src/sim/world.ts';
+import { terrainHeight, waterLevelAt } from '../../../upstream/src/sim/world.ts';
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 
-const height=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
-const frame=new THREE.Box3(), dimensions=new THREE.Vector3();
-function place(root:THREE.Group,templates:Map<string,THREE.Group>,key:string,x:number,z:number,width:number,tall:number,depth:number,rot=0){
-  const src=templates.get(key);if(!src)return false;
-  const item=src.clone(true);frame.setFromObject(item);frame.getSize(dimensions);
-  const sx=width/Math.max(.01,dimensions.x),sy=tall/Math.max(.01,dimensions.y),sz=depth/Math.max(.01,dimensions.z);
-  item.scale.set(sx,sy,sz);item.rotation.y=rot;
-  item.position.set(x,height(x,z)-frame.min.y*sy,z);
-  item.userData.highflyApprovedCC0=true;item.userData.highflyK2Fortress=true;
-  root.add(item);return true;
+export interface CityWall { x1:number;z1:number;x2:number;z2:number;radius:number;kind:string }
+const h=(x:number,z:number)=>terrainHeight(x,z,WORLD_SEED);
+const safe=(x:number,z:number)=>{const w=waterLevelAt(x,z,WORLD_SEED);return !Number.isFinite(w)||h(x,z)>w+1.1;};
+const center=EASTBROOK_LAYOUT.civic.center;
+const box=new THREE.Box3(),dim=new THREE.Vector3();
+function place(scene:THREE.Group,templates:Map<string,THREE.Group>,key:string,x:number,z:number,width:number,rotation=0){
+  const source=templates.get(key);if(!source)return false;
+  const mesh=source.clone(true);box.setFromObject(mesh);box.getSize(dim);
+  const scale=width/Math.max(.001,dim.x);
+  mesh.scale.setScalar(scale);mesh.rotation.y=rotation;
+  mesh.position.set(x,h(x,z)-box.min.y*scale,z);
+  if(key==='fortressGate') {
+    // The genuine KayKit gate has two named, independently pivoted door leaves.
+    mesh.traverse((node:any)=>{
+      if(/wall_straight_gate_door_left/i.test(node.name))node.rotation.y=-1.13;
+      if(/wall_straight_gate_door_right/i.test(node.name))node.rotation.y=1.13;
+    });
+  }
+  mesh.userData.highflyApprovedCC0=true;
+  mesh.userData.highflyK3Authored=true;
+  scene.add(mesh);
+  return true;
 }
-function distanceAngle(a:number,b:number){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));}
+function angular(a:number,b:number){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));}
+function point(a:number){
+  let r=39;
+  // Wall anchor moves INLAND if the original coastline crosses this angle.
+  for(let attempt=0;attempt<24;attempt++,r-=1.25){
+    const x=center.x+Math.cos(a)*r,z=center.z+Math.sin(a)*r;
+    if(safe(x,z)&&safe(x+Math.cos(a)*1,z+Math.sin(a)*1))return {x,z};
+  }
+  return {x:center.x+Math.cos(a)*10,z:center.z+Math.sin(a)*10};
+}
+function length(a:{x:number;z:number},b:{x:number;z:number}){return Math.hypot(a.x-b.x,a.z-b.z);}
+function yw(a:{x:number;z:number},b:{x:number;z:number}){return Math.atan2(-(b.z-a.z),b.x-a.x);}
+function lineDistance(px:number,pz:number,c:CityWall){
+  const dx=c.x2-c.x1,dz=c.z2-c.z1,k=Math.max(.001,dx*dx+dz*dz);
+  const t=Math.max(0,Math.min(1,((px-c.x1)*dx+(pz-c.z1)*dz)/k));
+  return Math.hypot(px-(c.x1+t*dx),pz-(c.z1+t*dz));
+}
+export function blockedByCity(x:number,z:number,blockers:readonly CityWall[]){
+  return blockers.some(b=>lineDistance(x,z,b)<b.radius+.48);
+}
+export function resolveCityMove(x:number,z:number,nx:number,nz:number,blocks:readonly CityWall[]){
+  // Small swept substeps prevent tunneling during dash, with axis sliding.
+  const dx=nx-x,dz=nz-z,steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.38));
+  let px=x,pz=z;
+  for(let i=0;i<steps;i++){
+    const sx=dx/steps,sz=dz/steps;
+    if(!blockedByCity(px+sx,pz+sz,blocks)){px+=sx;pz+=sz;continue;}
+    if(!blockedByCity(px+sx,pz,blocks))px+=sx;
+    if(!blockedByCity(px,pz+sz,blocks))pz+=sz;
+  }
+  return {x:px,z:pz};
+}
 export function buildHighflyFirstCity(templates:Map<string,THREE.Group>){
-  const center=EASTBROOK_LAYOUT.civic.center; // -14,-102 — official authored hub
-  const root=new THREE.Group();root.name='highfly-first-city-visual-overlay';
-  const radius=39,parts=64,segment=2*Math.PI*radius/parts;
-  const dockGate=Math.atan2(-58-center.z,-94-center.x),northGate=-Math.PI/2;
-  const gates=[dockGate,northGate];
-  let segments=0,doors=0,towers=0;
+  const root=new THREE.Group();root.name='HIGHFLY-K3-CC0-physical-city';
+  const blockers:CityWall[]=[];
+  const parts=40,period=Math.PI*2/parts;
+  // Gate aims at authored harbour and existing north road; NOT a random axis.
+  const targets=[Math.atan2(-58-center.z,-94-center.x),Math.atan2(-72-center.z,6-center.x)];
+  const gates=new Set(targets.map(t=>((Math.round(t/period-.5)%parts)+parts)%parts));
+  const pts=Array.from({length:parts},(_,i)=>point(i*period));
+  let walls=0,opened=0,towers=0;
   for(let i=0;i<parts;i++){
-    const a=(i+.5)*Math.PI*2/parts,x=center.x+Math.cos(a)*radius,z=center.z+Math.sin(a)*radius;
-    if(gates.some(g=>distanceAngle(a,g)<Math.PI*2/parts*1.42))continue;
-    const rot=-Math.PI/2-a;
-    if(place(root,templates,'fortressWall',x,z,segment*1.05,4.8,1.5,rot))segments++;
+    const a=pts[i],b=pts[(i+1)%parts],d=length(a,b);
+    const x=(a.x+b.x)/2,z=(a.z+b.z)/2;
+    if(!safe(x,z)||d<1.8)continue;
+    if(gates.has(i)){
+      if(place(root,templates,'fortressGate',x,z,d,yw(a,b)))opened++;
+      // No collider across the gate opening.
+    }else if(place(root,templates,'fortressWall',x,z,d*1.04,yw(a,b))){
+      walls++;blockers.push({x1:a.x,z1:a.z,x2:b.x,z2:b.z,radius:1.15,kind:'wall'});
+    }
   }
-  for(const angle of gates){
-    const x=center.x+Math.cos(angle)*radius,z=center.z+Math.sin(angle)*radius;
-    if(place(root,templates,'fortressGate',x,z,12.5,6.1,2.4,-Math.PI/2-angle))doors++;
+  // Four guarded corners: the tower silhouette remains KayKit, never procedural.
+  for(const i of [5,15,25,35]){
+    const p=pts[i];if(!safe(p.x,p.z))continue;
+    if(place(root,templates,'fortressTower',p.x,p.z,7,0)) {
+      towers++;blockers.push({x1:p.x,z1:p.z,x2:p.x,z2:p.z,radius:2.0,kind:'tower'});
+    }
   }
-  for(const angle of [Math.PI/4,3*Math.PI/4,5*Math.PI/4,7*Math.PI/4]){
-    const x=center.x+Math.cos(angle)*radius,z=center.z+Math.sin(angle)*radius;
-    if(place(root,templates,'fortressTower',x,z,7.5,10.5,7.5,Math.PI/2-angle))towers++;
-  }
-  // A keep above the original city square. This currently only displays approved geometry.
-  const castle=place(root,templates,'castle',center.x+10,center.z-20,11.5,10,11.5,-.2);
-  // Gardens and outer forest keep a visibly constructed transition to wilderness.
-  let gardens=0;
-  for(let i=0;i<22;i++){const a=i*Math.PI*2/22+.11;
-    const r=radius+10+(i%3)*5,x=center.x+Math.cos(a)*r,z=center.z+Math.sin(a)*r;
-    if(gates.some(g=>distanceAngle(a,g)<.20))continue;
-    if(place(root,templates,i%2?'treeB':'treeA',x,z,3.6+(i%3)*.6,6+(i%3)*.5,3.6+(i%3)*.6,a))gardens++;
-  }
-  return {root,counts:{wallSegments:segments,gates:doors,towers,castle:castle?1:0,trees:gardens}};
+  // Use the original town's real civic feature coordinate, NOT loose floor tiles.
+  const well=EASTBROOK_LAYOUT.civic.monument.position;
+  const civic=well&&safe(well.x,well.z)&&place(root,templates,'well',well.x,well.z,3.5,0);
+  return {root,blockers,counts:{wallSegments:walls,gates:opened,towers,well:civic?1:0,trees:0}};
 }
