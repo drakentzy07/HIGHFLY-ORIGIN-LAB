@@ -58,6 +58,8 @@ try {
   if(!(initial.realBuildingsShown>0))
     throw Error('C0-I true KayKit 3D buildings were not placed in original Eastbrook map');
 
+  if(initial.streaming?.regions!==15||!(initial.streaming?.chunks>=9))
+    throw Error('C0-J world did not stream the original 15-zone map: '+JSON.stringify(initial.streaming));
   await page.mouse.move(750,190);
   await page.mouse.down();
   await page.mouse.move(830,215,{steps:4});
@@ -102,6 +104,15 @@ try {
   await page.locator('#atk').click();
   await page.waitForTimeout(400);
   if(pageErrors.length)throw Error('Pointer/attack JS errors: '+JSON.stringify(pageErrors.slice(0,5)));
+  // Travel to another authored zone and verify new terrain sectors stream in.
+  const targetRegion=await page.locator('#zoneJump option').last().getAttribute('value');
+  if(!targetRegion)throw Error('C0-J zone travel options missing');
+  await page.locator('#zoneJump').selectOption(targetRegion);
+  await page.waitForTimeout(2200);
+  const afterTravel=await snapshot();
+  if(afterTravel.streaming?.sector===initial.streaming?.sector||afterTravel.streaming?.zone===initial.streaming?.zone)
+    throw Error('C0-J map traversal did not change sector and zone: '+JSON.stringify({initial:initial.streaming,afterTravel:afterTravel.streaming}));
+  if(pageErrors.length)throw Error('World travel JS errors: '+JSON.stringify(pageErrors.slice(0,5)));
   await mkdir('highfly/reports/c0/browser',{recursive:true});
   await page.screenshot({path:'highfly/reports/c0/browser/landscape.png'});
   const report={passed:true,view:'915x412 mobile landscape',canvas,stats,status,

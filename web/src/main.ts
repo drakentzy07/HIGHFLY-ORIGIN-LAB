@@ -9,7 +9,9 @@ import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { cameraBasis, controlWorldVector, yawAfterDrag, pitchAfterDrag, orbitCameraPosition } from './control_math.mjs';
 import { Sim } from '../../../upstream/src/sim/sim.ts';
 import { BUILTIN_WORLD, PLAYER_START, ZONES } from '../../../upstream/src/sim/data.ts';
-import { terrainHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
+import { terrainHeight, groundHeight, WATER_LEVEL } from '../../../upstream/src/sim/world.ts';
+import { resolveMovement } from '../../../upstream/src/sim/colliders.ts';
+import { WorldStreamer } from './world_stream.ts';
 import { WORLD_SEED } from '../../../upstream/src/sim/world_seed.ts';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
@@ -31,6 +33,7 @@ let prevCameraX=0,prevCameraY=0;
 let lastFrame=performance.now(), elapsed=0, simCarry=0, hudCarry=0;
 let sim:any, player:any, playerId=0;
 let target:any=null;
+let worldStreamer:WorldStreamer|null=null;
 const approvedLoader=new GLTFLoader();
 approvedLoader.setMeshoptDecoder(MeshoptDecoder);
 const buildingVisuals=new Map<string,THREE.Group>();
@@ -353,8 +356,9 @@ function clock(t:number){
     ix/=Math.max(1,mag);iy/=Math.max(1,mag);
     const speed=(dashLeft>0?18:7.2)*dt;
     const direction=controlWorldVector(ix,iy,yaw);
-    player.pos.x+=direction.x*speed;
-    player.pos.z+=direction.z*speed;
+    const next=resolveMovement(WORLD_SEED,player.pos.x,player.pos.z,player.pos.x+direction.x*speed,player.pos.z+direction.z*speed);
+    player.pos.x=next.x;
+    player.pos.z=next.z;
     player.facing=Math.atan2(direction.x,direction.z);
     player.vx=0;player.vz=0;
   }
@@ -363,14 +367,14 @@ function clock(t:number){
     jumpOffset+=jumpSpeed*dt;jumpSpeed-=18*dt;
     if(jumpOffset<0){jumpOffset=0;jumpSpeed=0;}
   }
-  const ground=height(player.pos.x,player.pos.z);
+  const ground=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
   if(Number.isFinite(ground))player.pos.y=ground;
   let ticks=0;
   while(simCarry>=.05&&ticks++<3){
     simCarry-=.05;
     try{sim.tick();}catch(err){status.textContent='Sim runtime error: '+String(err);simCarry=0;break;}
   }
-  const y=height(player.pos.x,player.pos.z);
+  const y=groundHeight(player.pos.x,player.pos.z,WORLD_SEED);
   playerMesh.position.set(player.pos.x,Number.isFinite(y)?y+jumpOffset:player.pos.y+jumpOffset,player.pos.z);
   playerMesh.rotation.y=player.facing||0;
   const focus=new THREE.Vector3(player.pos.x,playerMesh.position.y+1.6,player.pos.z);
@@ -383,6 +387,8 @@ function clock(t:number){
   camera.lookAt(focus);
   if(hudCarry>.15){
     hudCarry=0;
+    worldStreamer?.update(player.pos.x,player.pos.z);
+    realBuildingsShown=worldStreamer?.approvedVisible??0;
     updateEntities();
     const zone=ZONES.find((z:any)=>player.pos.z>=z.zMin&&player.pos.z<=z.zMax);
     const hp=Math.max(0,Math.min(100,Math.round(100*(player.hp??0)/Math.max(1,player.maxHp??1))));
@@ -411,15 +417,24 @@ async function initialize(){
     await new Promise(resolve=>setTimeout(resolve,30));
     loadText.textContent='Loading verified KayKit town buildings and Quaternius wolf…';
     await loadApprovedModels();
-    generateGround(centerX,centerZ);
-    renderRoads(centerX,centerZ);
-    const buildings=renderBuildings(centerX,centerZ);
-    renderTemporaryVegetation(centerX,centerZ);
+    worldStreamer=new WorldStreamer(scene,buildingVisuals);
+    worldStreamer.update(player.pos.x,player.pos.z,true);
+    realBuildingsShown=worldStreamer.approvedVisible;
+    const buildings=realBuildingsShown;
     updateEntities();
-    status.textContent='Eastbrook region · '+buildings+' original building coordinates';
+    status.textContent='Mundo C0-J · 15 regiones · '+buildings+' edificios KayKit visibles';
+    const zonesSelect=document.getElementById('zoneJump') as HTMLSelectElement|null;
+    if(zonesSelect){for(let i=0;i<ZONES.length;i++){const opt=document.createElement('option');opt.value=String(i);opt.textContent=(i+1)+'. '+ZONES[i].name;zonesSelect.appendChild(opt);}
+      zonesSelect.addEventListener('change',()=>{const zone=ZONES[Number(zonesSelect.value)];if(!zone)return;
+        const p=posOf(zone.hub)||{x:((zone as any).xMin??-180)+180,z:(zone.zMin+zone.zMax)/2};
+        player.pos.x=p.x;player.pos.z=p.z;player.pos.y=groundHeight(p.x,p.z,WORLD_SEED);
+        target=null;jumpOffset=0;jumpSpeed=0;dashLeft=0;
+        worldStreamer?.update(p.x,p.z,true);status.textContent='Exploración: '+zone.name;
+      });}
+
     // Read-only diagnostics: assert the actual mobile pointer paths, not just pure math.
     Object.defineProperty(window,'__HIGHFLY_C0_CONTROL_DIAG__',{value:()=>({
-      yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},right:cameraBasis(yaw).right,
+      yaw,pitch,approvedModelsLoaded:{house:buildingVisuals.has('house'),tavern:buildingVisuals.has('tavern'),wolf:!!wolfVisual},realBuildingsShown,realWolvesShown,camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z},position:{x:player.pos.x,z:player.pos.z},streaming:{chunks:worldStreamer?.chunkCount,sector:worldStreamer?.sector,regions:worldStreamer?.zones,zone:worldStreamer?.lastZone},right:cameraBasis(yaw).right,
       forward:cameraBasis(yaw).forward
     }),configurable:false});
     loader.style.display='none';
