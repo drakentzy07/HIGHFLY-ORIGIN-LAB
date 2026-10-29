@@ -6,6 +6,8 @@ on:
     paths:
       - "web/**"
       - "scripts/c0_build_web.mjs"
+      - "scripts/c0_browser_smoke.mjs"
+      - "tests/c0_controls.test.mjs"
       - "scripts/c0_stage_cc0_media.mjs"
       - "scripts/c0_release_gate.mjs"
       - "config/c0_approved_assets.json"
@@ -65,13 +67,21 @@ jobs:
         with:
           node-version: "22"
       - name: Install compile tools only
-        run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0
+        run: npm install --prefix highfly --no-save --no-package-lock --ignore-scripts esbuild@0.28.1 three@0.185.0 playwright-core@1.61.1
       - name: Build original world with original CODE and custom zero-asset renderer
         run: node highfly/scripts/c0_build_web.mjs
       - name: Stage six verified CC0 model files (2 buildings + wolf)
         run: node highfly/scripts/c0_stage_cc0_media.mjs
       - name: Hard license and no-prohibited-media gate
         run: node highfly/scripts/c0_release_gate.mjs highfly/dist highfly/config/c0_approved_assets.json
+      - name: Verify movement and camera directional logic
+        run: node --test highfly/tests/c0_controls.test.mjs
+      - name: Start temporary local preview server
+        run: |
+          nohup python3 -m http.server 4173 --bind 127.0.0.1 --directory highfly/dist > /tmp/highfly-pages-preview.log 2>&1 &
+          sleep 2
+      - name: CRITICAL pre-deployment mobile browser gate
+        run: node highfly/scripts/c0_browser_smoke.mjs
       - name: Prepare GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload approved HTML/JS/NOTICE only for Pages
