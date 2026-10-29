@@ -60,7 +60,8 @@ test('project-only, noncommercial and weak evidence are never valid approvals',(
   assert.equal(inspectMedia('models/wolf.glb',content,new Map([[ok.path,ok]])),null);
 });
 test('embedded image data and known restricted branding are blocked',()=>{
-  assert.equal(detectEmbeds("const img = 'data:image/png;base64,abcd'"),'EMBEDDED_MEDIA_REVIEW_REQUIRED');
+  assert.equal(detectEmbeds("const img = 'data:image/png;base64,"+"iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB"+"';"),'EMBEDDED_MEDIA_REVIEW_REQUIRED');
+  assert.equal(detectEmbeds('function parse(s){return s.startsWith("data:image/")}'),null);
   assert.equal(detectEmbeds('asset=fel_meteor_impact.png'),'RESTRICTED_BRANDING_OR_ASSET_REFERENCE');
 });
 test('original MIT notices must accompany the derived game build',async(t)=>{
