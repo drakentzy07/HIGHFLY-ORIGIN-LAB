@@ -183,7 +183,7 @@ function makeEntity(e:any){
     const wolf=/wolf|hound|fox|boar/i.test((e.templateId||'')+' '+(e.name||''));
     model=new THREE.Mesh(wolf?new THREE.BoxGeometry(1.8,.9,2.35):new THREE.IcosahedronGeometry(.82,0),
       wolf?wolfMat:otherMobMat);
-    model.position.y=wolf?.90:1.1;
+    model.position.y=wolf ? 0.90 : 1.1;
   }
   group.add(model);
   if(e.kind==='npc'){
