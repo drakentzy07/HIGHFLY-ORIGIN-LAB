@@ -52,6 +52,12 @@ try {
   const snapshot = () => page.evaluate(() => window.__HIGHFLY_C0_CONTROL_DIAG__?.());
   const initial = await snapshot();
   if(!initial) throw Error('C0-H control diagnostics missing');
+  if(!initial.approvedModelsLoaded?.house||!initial.approvedModelsLoaded?.tavern||
+     !initial.approvedModelsLoaded?.wolf)
+    throw Error('C0-I approved 3D models did not load: '+JSON.stringify(initial.approvedModelsLoaded));
+  if(!(initial.realBuildingsShown>0))
+    throw Error('C0-I true KayKit 3D buildings were not placed in original Eastbrook map');
+
   await page.mouse.move(750,190);
   await page.mouse.down();
   await page.mouse.move(830,215,{steps:4});
@@ -99,6 +105,9 @@ try {
   await mkdir('highfly/reports/c0/browser',{recursive:true});
   await page.screenshot({path:'highfly/reports/c0/browser/landscape.png'});
   const report={passed:true,view:'915x412 mobile landscape',canvas,stats,status,
+    approvedModelsLoaded:initial.approvedModelsLoaded,
+    realBuildingsShown:initial.realBuildingsShown,
+    realWolvesShown:initial.realWolvesShown,
     cameraSwipeRightYawDelta:afterCamera.yaw-initial.yaw,
     swipeUpPitchDelta:afterUp.pitch-afterCamera.pitch,
     swipeDownPitchDelta:afterDown.pitch-afterUp.pitch,
