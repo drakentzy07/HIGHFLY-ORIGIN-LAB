@@ -45,7 +45,7 @@ try {
   const canvas=await page.locator('#stage').evaluate(el=>({
     width:el.width,height:el.height,webglAvailable:!!el.getContext('webgl2')
   }));
-  if(!stats.includes('Level')||!status.includes('Zone'))throw Error('HUD not populated: '+JSON.stringify({stats,status}));
+  if(!(/Level|Nivel/.test(stats))||!/Zone|Zona/.test(status))throw Error('HUD not populated: '+JSON.stringify({stats,status}));
   if(!canvas.width||!canvas.height||!canvas.webglAvailable)throw Error('WebGL canvas missing '+JSON.stringify(canvas));
   if(pageErrors.length)throw Error('Browser JS errors: '+JSON.stringify(pageErrors.slice(0,5)));
   // Check the actual pointer event path and world positions, not only math tests.
