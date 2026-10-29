@@ -1,0 +1,7 @@
+{
+  "name": "highfly-origin-lab",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Clean source audit harness, no playable game or media imported"
+}
